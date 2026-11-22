@@ -70,7 +70,7 @@ button:focus { outline: none; }
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.18s var(--ease-out) 0.1s, filter 0.18s;
+  transition: opacity 0.16s var(--ease-out) 0.05s, filter 0.16s;
 }
 #island.expanded #compact { opacity: 0; filter: blur(4px); transition-delay: 0s; pointer-events: none; }
 
@@ -138,16 +138,6 @@ header { display: flex; justify-content: space-between; align-items: center; }
 #sec { font-size: 18px; font-weight: 500; letter-spacing: 0; color: var(--secondary); margin-left: 2px; }
 #date { text-align: right; }
 
-.gem-btn {
-  margin-left: auto; margin-right: 10px; width: 34px; height: 34px; flex: none;
-  border: 0; border-radius: 50%; background: var(--card); cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center;
-  transition: background 0.15s, transform 0.3s var(--ease-back);
-}
-.gem-btn svg { width: 18px; height: 18px; transition: transform 0.4s var(--ease-back); }
-.gem-btn:hover { background: var(--card-hover); }
-.gem-btn:hover svg { transform: rotate(45deg) scale(1.1); }
-.gem-btn:active { transform: scale(0.88); }
 #day { font-size: 13px; font-weight: 600; }
 #date-line { font-size: 12px; color: var(--secondary); }
 

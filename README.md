@@ -12,7 +12,6 @@ A tiny Dynamic Island–style notch for Windows. It hangs from the top edge of y
   - **drag the progress bar** to jump anywhere in the track
 - **Real app icons:** while something plays, the pill shows that app's icon. Desktop apps use their own Windows icon. Recognised sites (YouTube, YouTube Music, Instagram, TikTok, Netflix, Twitch, SoundCloud, Facebook, X) get their logo. The icon hides when you pause.
 - **Audio-reactive bars:** the bars follow the actual sound coming out of your speakers (bass on the left, treble on the right) in the app's colour.
-- **Ask Gemini about your screen:** press the Gemini button (or **Ctrl+Alt+G**). NotchClock takes a screenshot, opens Gemini in your signed-in Chrome/Edge as a clean app window and pastes the screenshot in, so you can just type your question. It uses your own Google account and Gemini plan.
 - **Timer & stopwatch:** a compact row that opens when you click it. While one is running, the collapsed pill shows the countdown, Live Activity–style, and you get a chime and a notification when a timer finishes.
 - **Lightweight and always on:** starts with Windows and lives in the system tray. **Ctrl+Alt+N** shows or hides it.
 
@@ -49,7 +48,6 @@ The installer is written to `dist/`.
 | --- | --- |
 | Open the panel | Hover over the island |
 | Seek in a track | Click or drag the progress bar |
-| Ask Gemini about the screen | Gemini button in the panel, or **Ctrl+Alt+G** |
 | Timer / stopwatch | Click the **Timer & Stopwatch** row |
 | Show / hide | **Ctrl+Alt+N** or double-click the tray icon |
 | Start with Windows on/off, exit | Right-click the tray icon |
@@ -59,12 +57,11 @@ The installer is written to `dist/`.
 - **Electron** renders a transparent, always-on-top window. Mouse events pass through everywhere except the island itself.
 - **Media info and controls** come from Windows' own media session API (`GlobalSystemMediaTransportControls`), read by a small PowerShell helper (`helper/media.ps1`). No native modules are needed.
 - **The bars** analyse the system audio output (WASAPI loopback) with the Web Audio API. Audio is only analysed in memory, never recorded or saved, and processing stops when playback pauses.
-- **Gemini** opens in an app-style window of the browser you are already signed into (Chrome, Edge or Brave), so it uses your own Google account and Gemini plan. The screenshot is copied to your clipboard and pasted into Gemini automatically; press Ctrl+V if it is not.
 - **Site detection for browsers** uses window titles, because browsers only tell Windows that "Chrome" (for example) is playing, not which site.
 
 ## Privacy
 
-NotchClock makes no network requests of its own. The only exception is the Gemini window: when you press the Gemini button, a screenshot of your screen is attached to Gemini and sent to Google only when you send the message. Settings and logs stay in `%APPDATA%\notchclock`.
+NotchClock makes no network requests. Settings and logs stay in `%APPDATA%\notchclock`.
 
 ## License
 

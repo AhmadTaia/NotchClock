@@ -3,7 +3,6 @@ const {
   app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, globalShortcut, shell,
   session, desktopCapturer, Notification,
 } = require('electron');
-const gemini = require('./gemini');
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
@@ -13,7 +12,6 @@ const HOST_HEIGHT = 560;
 const MEDIA_COMMANDS = new Set(['toggle', 'next', 'prev']);
 const HELPER_RESTART_MS = 3000;
 const TOGGLE_SHORTCUT = 'Control+Alt+N';
-const GEMINI_SHORTCUT = 'Control+Alt+G';
 
 let win = null;
 let tray = null;
@@ -225,7 +223,6 @@ function createTray() {
   tray.setToolTip('NotchClock');
   const menu = Menu.buildFromTemplate([
     { label: `Show / hide island  (${TOGGLE_SHORTCUT.replace('Control', 'Ctrl')})`, click: toggleWindow },
-    { label: `Ask Gemini about my screen  (${GEMINI_SHORTCUT.replace('Control', 'Ctrl')})`, click: askGemini },
     { label: 'Start with Windows', type: 'checkbox', checked: isStartupEnabled(), click: (item) => setStartup(item.checked) },
     { label: 'Open data folder', click: () => shell.openPath(app.getPath('userData')) },
     { type: 'separator' },
@@ -250,13 +247,6 @@ ipcMain.on('media-command', (_e, command) => {
   helper.stdin.write(command + '\n');
 });
 
-function askGemini() {
-  gemini.askAboutScreen({ island: win, logError })
-    .catch((err) => logError('gemini', err));
-}
-
-ipcMain.on('ask-gemini', askGemini);
-
 ipcMain.on('timer-done', (_e, label) => {
   if (!Notification.isSupported()) return;
   new Notification({ title: 'Timer done', body: `Your ${String(label).slice(0, 32)} timer has finished.`, silent: true }).show();
@@ -274,7 +264,6 @@ app.whenReady().then(() => {
   createTray();
   startHelper();
   globalShortcut.register(TOGGLE_SHORTCUT, toggleWindow);
-  globalShortcut.register(GEMINI_SHORTCUT, askGemini);
 });
 
 app.on('before-quit', () => {

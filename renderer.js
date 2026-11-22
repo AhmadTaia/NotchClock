@@ -10,7 +10,7 @@
   const EXPANDED_WIDTH = 360;
   const EXPANDED_RADIUS = 26;
   const MAX_HEIGHT = 540;
-  const COLLAPSE_DELAY_MS = 320;
+  const COLLAPSE_DELAY_MS = 60; // just enough to ignore brushing past the edge
   const PROGRESS_TICK_MS = 500;
 
   const $ = (id) => document.getElementById(id);
@@ -358,11 +358,6 @@
     window.notch.media(`seek ${target.toFixed(1)}`);
   });
   seekBar.addEventListener('pointercancel', () => { scrubbing = false; seekBar.classList.remove('scrubbing'); });
-
-  $('gemini-btn').addEventListener('click', () => {
-    collapse();
-    window.notch.askGemini();
-  });
 
   document.querySelectorAll('[data-cmd]').forEach((btn) => {
     btn.addEventListener('click', () => window.notch.media(btn.dataset.cmd));
