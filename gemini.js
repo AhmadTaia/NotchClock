@@ -1,97 +1,40 @@
-// "Ask Gemini about my screen": screenshot the screen, open gemini.google.com in its own window
-// (signed in with your own Google account / Gemini subscription) and attach the screenshot.
-const { BrowserWindow, screen, desktopCapturer, clipboard, shell } = require('electron');
+// "Ask Gemini about my screen": screenshot the screen, open Gemini in an app-style window of the
+// browser you're already signed into (Chrome / Edge / Brave), and paste the screenshot in.
+// Nothing heavy stays loaded inside NotchClock.
+const { screen, desktopCapturer, clipboard, shell, Notification } = require('electron');
+const { spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 
 const GEMINI_URL = 'https://gemini.google.com/app';
-const PARTITION = 'persist:gemini'; // keeps you signed in between launches
-const WINDOW_WIDTH = 460;
-const WINDOW_MAX_HEIGHT = 780;
-const SCREEN_MARGIN = 16;
-const HIDE_SETTLE_MS = 220; // let the island/Gemini windows disappear before capturing
-const EDITOR_RETRY_MS = 500;
-const EDITOR_MAX_TRIES = 24;
-const CLIPBOARD_RESTORE_MS = 1500;
-const ALLOWED_PERMISSIONS = new Set(['clipboard-read', 'clipboard-sanitized-write', 'media', 'notifications']);
+const HIDE_SETTLE_MS = 220; // let the island disappear before capturing
 
-// A normal Chrome user agent: Google's sign-in refuses unknown embedded browsers.
-const CHROME_UA = `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${process.versions.chrome} Safari/537.36`;
+// Waits for the Gemini window to appear, focuses it and presses Ctrl+V. It only pastes if a window
+// titled "Gemini" was actually activated, so it can never paste into some other app.
+const PASTE_SCRIPT = [
+  '$w = New-Object -ComObject WScript.Shell',
+  '$ok = $false',
+  'for ($i = 0; $i -lt 40 -and -not $ok; $i++) { Start-Sleep -Milliseconds 250; $ok = $w.AppActivate("Gemini") -or $w.AppActivate("Google Gemini") }',
+  'if ($ok) { Start-Sleep -Milliseconds 1800; if ($w.AppActivate("Gemini") -or $w.AppActivate("Google Gemini")) { $w.SendKeys("^v") } }',
+].join('; ');
 
-// Gemini's prompt box (a contenteditable); several selectors in case Google changes markup.
-const FOCUS_EDITOR_JS = `(() => {
-  const el = document.querySelector('rich-textarea .ql-editor, div.ql-editor[contenteditable="true"], [contenteditable="true"][role="textbox"]');
-  if (!el) return false;
-  el.focus();
-  return true;
-})()`;
-
-let geminiWin = null;
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-function isGoogleUrl(raw) {
-  try {
-    const { protocol, hostname } = new URL(raw);
-    if (protocol !== 'https:') return false;
-    return hostname === 'google.com' || hostname.endsWith('.google.com') || hostname.endsWith('.gstatic.com') ||
-      hostname.endsWith('.googleusercontent.com') || hostname === 'accounts.youtube.com';
-  } catch {
-    return false;
+function findChromiumBrowser() {
+  const env = process.env;
+  const candidates = [
+    [env.ProgramFiles, 'Google', 'Chrome', 'Application', 'chrome.exe'],
+    [env['ProgramFiles(x86)'], 'Google', 'Chrome', 'Application', 'chrome.exe'],
+    [env.LOCALAPPDATA, 'Google', 'Chrome', 'Application', 'chrome.exe'],
+    [env['ProgramFiles(x86)'], 'Microsoft', 'Edge', 'Application', 'msedge.exe'],
+    [env.ProgramFiles, 'Microsoft', 'Edge', 'Application', 'msedge.exe'],
+    [env.ProgramFiles, 'BraveSoftware', 'Brave-Browser', 'Application', 'brave.exe'],
+    [env.LOCALAPPDATA, 'BraveSoftware', 'Brave-Browser', 'Application', 'brave.exe'],
+  ];
+  for (const parts of candidates) {
+    if (!parts[0]) continue;
+    const exe = path.join(...parts);
+    if (fs.existsSync(exe)) return exe;
   }
-}
-
-function openExternally(raw) {
-  try {
-    const { protocol } = new URL(raw);
-    if (protocol === 'https:' || protocol === 'http:') shell.openExternal(raw);
-  } catch {
-    // ignore malformed links
-  }
-}
-
-function createWindow(isQuitting) {
-  const { workArea } = screen.getPrimaryDisplay();
-  const height = Math.min(WINDOW_MAX_HEIGHT, workArea.height - SCREEN_MARGIN * 2);
-  const win = new BrowserWindow({
-    width: WINDOW_WIDTH,
-    height,
-    x: workArea.x + workArea.width - WINDOW_WIDTH - SCREEN_MARGIN,
-    y: workArea.y + SCREEN_MARGIN,
-    title: 'Gemini',
-    autoHideMenuBar: true,
-    backgroundColor: '#131314',
-    show: false,
-    webPreferences: {
-      partition: PARTITION,
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: true,
-    },
-  });
-
-  const contents = win.webContents;
-  contents.setUserAgent(CHROME_UA);
-  contents.session.setPermissionRequestHandler((_wc, permission, callback) => callback(ALLOWED_PERMISSIONS.has(permission)));
-  // Only Google pages load in this window; everything else opens in your normal browser.
-  contents.setWindowOpenHandler(({ url }) => {
-    if (isGoogleUrl(url)) return { action: 'allow' };
-    openExternally(url);
-    return { action: 'deny' };
-  });
-  contents.on('will-navigate', (event, url) => {
-    if (!isGoogleUrl(url)) {
-      event.preventDefault();
-      openExternally(url);
-    }
-  });
-  // Closing just hides it, so the conversation and sign-in survive.
-  win.on('close', (event) => {
-    if (!isQuitting()) {
-      event.preventDefault();
-      win.hide();
-    }
-  });
-
-  win.loadURL(GEMINI_URL);
-  return win;
+  return null;
 }
 
 async function captureScreen() {
@@ -105,48 +48,17 @@ async function captureScreen() {
   return source ? source.thumbnail : null;
 }
 
-async function waitForLoad(contents) {
-  if (!contents.isLoading()) return;
-  await new Promise((resolve) => contents.once('did-stop-loading', resolve));
-}
-
-/** Focuses Gemini's prompt box and pastes the screenshot from the clipboard. */
-async function attachScreenshot(win, logError) {
-  const contents = win.webContents;
-  await waitForLoad(contents);
-  for (let attempt = 0; attempt < EDITOR_MAX_TRIES; attempt++) {
-    if (win.isDestroyed()) return false;
-    try {
-      if (await contents.executeJavaScript(FOCUS_EDITOR_JS, true)) {
-        contents.paste();
-        return true;
-      }
-    } catch (err) {
-      logError('gemini-attach', err);
-    }
-    await delay(EDITOR_RETRY_MS);
-  }
-  return false; // e.g. still on the sign-in page
-}
-
-function snapshotClipboard() {
-  const image = clipboard.readImage();
-  return image.isEmpty() ? { text: clipboard.readText() } : { image };
-}
-
-function restoreClipboard(saved) {
-  if (saved.image) clipboard.writeImage(saved.image);
-  else clipboard.writeText(saved.text || '');
+function notify(body) {
+  if (Notification.isSupported()) new Notification({ title: 'Ask Gemini', body, silent: true }).show();
 }
 
 /**
- * @param {{ island: BrowserWindow, isQuitting: () => boolean, logError: Function }} deps
+ * @param {{ island: import('electron').BrowserWindow, logError: Function }} deps
  */
-async function askAboutScreen({ island, isQuitting, logError }) {
+async function askAboutScreen({ island, logError }) {
   const islandVisible = island && island.isVisible();
   if (islandVisible) island.hide();
-  if (geminiWin && !geminiWin.isDestroyed() && geminiWin.isVisible()) geminiWin.hide();
-  await delay(HIDE_SETTLE_MS);
+  await new Promise((resolve) => setTimeout(resolve, HIDE_SETTLE_MS));
 
   let shot = null;
   try {
@@ -156,17 +68,25 @@ async function askAboutScreen({ island, isQuitting, logError }) {
   } finally {
     if (islandVisible) island.showInactive();
   }
+  const haveShot = shot && !shot.isEmpty();
+  if (haveShot) clipboard.writeImage(shot);
 
-  if (!geminiWin || geminiWin.isDestroyed()) geminiWin = createWindow(isQuitting);
-  geminiWin.show();
-  geminiWin.focus();
+  const browser = findChromiumBrowser();
+  if (!browser) {
+    shell.openExternal(GEMINI_URL);
+    if (haveShot) notify('Screenshot copied. Press Ctrl+V in Gemini to attach it.');
+    return;
+  }
 
-  if (!shot || shot.isEmpty()) return;
-  const saved = snapshotClipboard();
-  clipboard.writeImage(shot);
-  const attached = await attachScreenshot(geminiWin, logError);
-  // If it couldn't attach (e.g. you still need to sign in), leave the screenshot on the clipboard for Ctrl+V.
-  if (attached) setTimeout(() => restoreClipboard(saved), CLIPBOARD_RESTORE_MS);
+  // --app gives a clean window without tabs/address bar, using your normal signed-in profile.
+  spawn(browser, [`--app=${GEMINI_URL}`], { detached: true, stdio: 'ignore' }).unref();
+  if (!haveShot) return;
+  const paster = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden', '-Command', PASTE_SCRIPT], {
+    windowsHide: true,
+    stdio: 'ignore',
+  });
+  paster.on('error', (err) => logError('gemini-paste', err));
+  notify('Screenshot attached. If it isn\'t, press Ctrl+V.');
 }
 
 module.exports = { askAboutScreen };

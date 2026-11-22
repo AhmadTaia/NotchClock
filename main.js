@@ -9,7 +9,7 @@ const path = require('path');
 const fs = require('fs');
 
 const HOST_WIDTH = 480;
-const HOST_HEIGHT = 640;
+const HOST_HEIGHT = 560;
 const MEDIA_COMMANDS = new Set(['toggle', 'next', 'prev']);
 const HELPER_RESTART_MS = 3000;
 const TOGGLE_SHORTCUT = 'Control+Alt+N';
@@ -23,6 +23,12 @@ let quitting = false;
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 }
+
+// Keep the always-on footprint small:
+// - a 360px island doesn't need a GPU process (~190 MB); software compositing is plenty
+// - no spare pre-launched renderer, and don't grab the keyboard media keys from other apps
+app.disableHardwareAcceleration();
+app.commandLine.appendSwitch('disable-features', 'SpareRendererForSitePerProcess,HardwareMediaKeyHandling');
 
 const dataPath = (name) => path.join(app.getPath('userData'), name);
 
@@ -245,7 +251,7 @@ ipcMain.on('media-command', (_e, command) => {
 });
 
 function askGemini() {
-  gemini.askAboutScreen({ island: win, isQuitting: () => quitting, logError })
+  gemini.askAboutScreen({ island: win, logError })
     .catch((err) => logError('gemini', err));
 }
 

@@ -9,7 +9,7 @@
   const COLLAPSED_PADDING = 18; // horizontal breathing room when it grows for media / timers
   const EXPANDED_WIDTH = 360;
   const EXPANDED_RADIUS = 26;
-  const MAX_HEIGHT = 620;
+  const MAX_HEIGHT = 540;
   const COLLAPSE_DELAY_MS = 320;
   const PROGRESS_TICK_MS = 500;
 
@@ -108,6 +108,7 @@
     if (expanded) return;
     expanded = true;
     island.classList.add('expanded');
+    updateClock();
     retarget();
     updateProgress();
   }
@@ -158,7 +159,8 @@
   }
 
   function scheduleClock() {
-    updateClock();
+    // The collapsed notch shows a static icon, so only touch the DOM while the panel is open.
+    if (expanded) updateClock();
     // Re-align to the next whole second so the seconds tick exactly on time.
     setTimeout(scheduleClock, 1000 - (Date.now() % 1000) + 5);
   }

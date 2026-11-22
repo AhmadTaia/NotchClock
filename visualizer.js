@@ -9,6 +9,7 @@ window.NotchViz = (() => {
   const ATTACK = 0.55;
   const DECAY = 0.82;
   const BAND_GAIN = [1.0, 1.05, 1.2, 1.45, 1.9]; // treble carries less energy; lift it a bit
+  const FRAME_INTERVAL_MS = 1000 / 30;
 
   let analyser = null;
   let audioContext = null;
@@ -17,10 +18,14 @@ window.NotchViz = (() => {
   let starting = null;
   let running = false;
   let frameId = 0;
+  let lastDraw = 0;
   const levels = new Array(BAND_EDGES.length - 1).fill(0);
 
+  let barGroups = null;
   function bars() {
-    return Array.from(document.querySelectorAll('.viz')).map((group) => Array.from(group.children));
+    // The bar elements never change, so look them up once.
+    if (!barGroups) barGroups = Array.from(document.querySelectorAll('.viz')).map((group) => Array.from(group.children));
+    return barGroups;
   }
 
   async function ensureAnalyser() {
@@ -59,8 +64,11 @@ window.NotchViz = (() => {
     return starting;
   }
 
-  function frame() {
+  function frame(time) {
     if (!running) return;
+    frameId = requestAnimationFrame(frame);
+    if (time - lastDraw < FRAME_INTERVAL_MS) return;
+    lastDraw = time;
     analyser.getByteFrequencyData(bins);
     const groups = bars();
 
@@ -75,7 +83,6 @@ window.NotchViz = (() => {
       const scale = IDLE_SCALE + (1 - IDLE_SCALE) * levels[i];
       groups.forEach((group) => { if (group[i]) group[i].style.transform = `scaleY(${scale.toFixed(3)})`; });
     }
-    frameId = requestAnimationFrame(frame);
   }
 
   function rest() {

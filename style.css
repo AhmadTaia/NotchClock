@@ -114,16 +114,19 @@ button:focus { outline: none; }
   margin-left: calc(var(--expanded-width) / -2);
   padding: 10px 14px 12px;
   opacity: 0;
+  visibility: hidden;
   transform: scale(0.94) translateY(-6px);
   transform-origin: top center;
   pointer-events: none;
-  transition: opacity 0.14s, transform 0.2s var(--ease-out);
+  /* visibility flips after the fade so the closed panel costs nothing to render */
+  transition: opacity 0.14s, transform 0.2s var(--ease-out), visibility 0s linear 0.2s;
 }
 #island.expanded #full {
   opacity: 1;
+  visibility: visible;
   transform: none;
   pointer-events: auto;
-  transition: opacity 0.26s 0.08s, transform 0.45s var(--ease-back) 0.04s;
+  transition: opacity 0.26s 0.08s, transform 0.45s var(--ease-back) 0.04s, visibility 0s;
 }
 
 header { display: flex; justify-content: space-between; align-items: center; }

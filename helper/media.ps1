@@ -45,6 +45,10 @@ function Read-Art($thumbnail) {
 }
 
 $MaxWindowTitles = 12
+$ProcRefreshEvery = 5  # status updates between process lookups
+$script:procInfo = @{ exePath = ''; windows = @() }
+$script:procSource = $null
+$script:procAge = 0
 
 # Finds the process behind a media session's app id ("Spotify.exe", "Chrome", "MSEdge", ...)
 # so the app can show its real icon and, for browsers, which site is open.
@@ -96,9 +100,14 @@ function Get-State {
         dur     = [Math]::Round($duration, 1)
     }
 
-    $procInfo = Get-SourceProcessInfo $state.source
-    $state.exePath = $procInfo.exePath
-    $state.windows = $procInfo.windows
+    $script:procAge++
+    if ($state.source -ne $script:procSource -or $script:procAge -ge $ProcRefreshEvery) {
+        $script:procInfo = Get-SourceProcessInfo $state.source
+        $script:procSource = $state.source
+        $script:procAge = 0
+    }
+    $state.exePath = $script:procInfo.exePath
+    $state.windows = $script:procInfo.windows
 
     $key = "$($state.source)|$($state.title)|$($state.artist)"
     if ($key -ne $script:lastKey) {
