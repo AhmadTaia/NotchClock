@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div id="notch">
   <div id="island">
     <!-- Collapsed: a circle with a clock icon; grows into a pill for media / running timers -->
     <div id="compact">
@@ -25,6 +26,7 @@
     <div id="full">
       <header>
         <div id="big-time"><span id="hm">--:--</span><span id="sec">:--</span></div>
+        <button id="gemini-btn" class="gem-btn" title="Ask Gemini about your screen (Ctrl+Alt+G)"><svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="gemGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4796E3"/><stop offset=".55" stop-color="#9177C7"/><stop offset="1" stop-color="#CA6673"/></linearGradient></defs><path d="M12 2c.6 5.3 4.7 9.4 10 10-5.3.6-9.4 4.7-10 10-.6-5.3-4.7-9.4-10-10 5.3-.6 9.4-4.7 10-10z" fill="url(#gemGrad)"/></svg></button>
         <div id="date"><div id="day"></div><div id="date-line"></div></div>
       </header>
 
@@ -85,6 +87,7 @@
         </div></div>
       </section>
     </div>
+  </div>
   </div>
   <script src="visualizer.js"></script>
   <script src="timer.js"></script>

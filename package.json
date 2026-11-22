@@ -11,7 +11,14 @@
     "type": "git",
     "url": "https://github.com/AhmadTaia/NotchClock.git"
   },
-  "keywords": ["windows", "dynamic-island", "notch", "clock", "media-controls", "electron"],
+  "keywords": [
+    "windows",
+    "dynamic-island",
+    "notch",
+    "clock",
+    "media-controls",
+    "electron"
+  ],
   "private": true,
   "scripts": {
     "start": "electron .",
@@ -31,6 +38,7 @@
     },
     "files": [
       "main.js",
+      "gemini.js",
       "preload.js",
       "index.html",
       "style.css",
@@ -40,9 +48,18 @@
       "helper/**",
       "package.json"
     ],
-    "asarUnpack": ["helper/**"],
+    "asarUnpack": [
+      "helper/**"
+    ],
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "build/icon.png"
     },
     "nsis": {
@@ -53,6 +70,12 @@
       "createStartMenuShortcut": true,
       "runAfterFinish": true
     },
-    "publish": [{ "provider": "github", "owner": "AhmadTaia", "repo": "NotchClock" }]
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "AhmadTaia",
+        "repo": "NotchClock"
+      }
+    ]
   }
 }

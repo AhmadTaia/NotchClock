@@ -2,10 +2,13 @@
 (() => {
   'use strict';
 
-  const COLLAPSED_SIZE = 30; // collapsed island is a circle so it doesn't cover browser tabs
-  const COLLAPSED_PADDING = 14; // horizontal breathing room when it grows into a pill
+  // Collapsed: a small notch hanging from the top edge, short enough not to cover browser tabs.
+  const COLLAPSED_HEIGHT = 26;
+  const COLLAPSED_MIN_WIDTH = 38;
+  const COLLAPSED_RADIUS = 13;
+  const COLLAPSED_PADDING = 18; // horizontal breathing room when it grows for media / timers
   const EXPANDED_WIDTH = 360;
-  const EXPANDED_RADIUS = 30;
+  const EXPANDED_RADIUS = 26;
   const MAX_HEIGHT = 620;
   const COLLAPSE_DELAY_MS = 320;
   const PROGRESS_TICK_MS = 500;
@@ -44,9 +47,9 @@
   }
 
   const springs = {
-    w: new Spring(COLLAPSED_SIZE),
-    h: new Spring(COLLAPSED_SIZE),
-    r: new Spring(COLLAPSED_SIZE / 2),
+    w: new Spring(COLLAPSED_MIN_WIDTH),
+    h: new Spring(COLLAPSED_HEIGHT),
+    r: new Spring(COLLAPSED_RADIUS),
   };
 
   let expanded = false;
@@ -66,9 +69,9 @@
       springs.r.target = EXPANDED_RADIUS;
     } else {
       // The pill hugs whatever the collapsed view shows (clock, app icon + bars, timer).
-      springs.w.target = Math.max(COLLAPSED_SIZE, compactInner.offsetWidth + COLLAPSED_PADDING);
-      springs.h.target = COLLAPSED_SIZE;
-      springs.r.target = COLLAPSED_SIZE / 2;
+      springs.w.target = Math.max(COLLAPSED_MIN_WIDTH, compactInner.offsetWidth + COLLAPSED_PADDING);
+      springs.h.target = COLLAPSED_HEIGHT;
+      springs.r.target = COLLAPSED_RADIUS;
     }
     if (!frameId) {
       lastFrame = 0;
@@ -91,7 +94,9 @@
     const h = Math.max(1, springs.h.value);
     island.style.width = `${w}px`;
     island.style.height = `${h}px`;
-    island.style.borderRadius = `${Math.max(0, Math.min(springs.r.value, w / 2, h / 2))}px`;
+    // Top corners stay square so the notch reads as part of the screen edge.
+    const r = Math.max(0, Math.min(springs.r.value, w / 2, h));
+    island.style.borderRadius = `0 0 ${r}px ${r}px`;
   }
 
   // Keeps the island fitted to its content (media appearing, timer mode switching, etc.).
@@ -351,6 +356,11 @@
     window.notch.media(`seek ${target.toFixed(1)}`);
   });
   seekBar.addEventListener('pointercancel', () => { scrubbing = false; seekBar.classList.remove('scrubbing'); });
+
+  $('gemini-btn').addEventListener('click', () => {
+    collapse();
+    window.notch.askGemini();
+  });
 
   document.querySelectorAll('[data-cmd]').forEach((btn) => {
     btn.addEventListener('click', () => window.notch.media(btn.dataset.cmd));

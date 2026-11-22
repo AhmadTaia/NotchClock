@@ -29,23 +29,38 @@ html, body {
 button { font-family: inherit; }
 button:focus { outline: none; }
 
-/* ---- island shell (size + radius driven by the spring in renderer.js) ---- */
-#island {
+/* ---- notch: flush with the top edge of the screen, MacBook-style ---- */
+#notch {
   position: absolute;
-  top: 4px;
+  top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 30px;
-  height: 30px;
-  border-radius: 15px;
+}
+/* Concave "ears" that blend the notch into the screen edge. */
+#notch::before, #notch::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+}
+#notch::before { left: -10px; background: radial-gradient(circle at 0 100%, transparent 9.5px, var(--island) 10px); }
+#notch::after { right: -10px; background: radial-gradient(circle at 100% 100%, transparent 9.5px, var(--island) 10px); }
+
+/* Size + bottom corner radius are driven by the spring in renderer.js. */
+#island {
+  position: relative;
+  width: 38px;
+  height: 26px;
+  border-radius: 0 0 13px 13px;
   background: var(--island);
   overflow: hidden;
-  box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.06);
 }
 #island.alarm { animation: alarm 1s ease-in-out infinite; }
 @keyframes alarm {
-  0%, 100% { box-shadow: 0 0 0 0.5px rgba(255, 159, 10, 0.3); }
-  50% { box-shadow: 0 0 0 2.5px rgba(255, 159, 10, 0.95); }
+  0%, 100% { box-shadow: inset 0 -2px 0 rgba(255, 159, 10, 0.25); }
+  50% { box-shadow: inset 0 -3px 0 rgba(255, 159, 10, 0.95); }
 }
 
 /* ---- collapsed ---- */
@@ -66,7 +81,7 @@ button:focus { outline: none; }
 #c-clock { display: block; width: 16px; height: 16px; color: var(--primary); animation: pop 0.4s var(--ease-back); }
 #island.playing #c-clock, #island.timer-active #c-clock { display: none; }
 
-#c-app { display: none; width: 24px; height: 24px; border-radius: 50%; flex: none; margin-left: -4px; }
+#c-app { display: none; width: 20px; height: 20px; border-radius: 50%; flex: none; margin-left: -3px; }
 #c-app svg, #c-app img { display: block; width: 100%; height: 100%; }
 #c-app img { object-fit: contain; border-radius: 6px; }
 /* Only while actually playing: pausing or stopping hides the app icon again. */
@@ -119,6 +134,17 @@ header { display: flex; justify-content: space-between; align-items: center; }
 }
 #sec { font-size: 18px; font-weight: 500; letter-spacing: 0; color: var(--secondary); margin-left: 2px; }
 #date { text-align: right; }
+
+.gem-btn {
+  margin-left: auto; margin-right: 10px; width: 34px; height: 34px; flex: none;
+  border: 0; border-radius: 50%; background: var(--card); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background 0.15s, transform 0.3s var(--ease-back);
+}
+.gem-btn svg { width: 18px; height: 18px; transition: transform 0.4s var(--ease-back); }
+.gem-btn:hover { background: var(--card-hover); }
+.gem-btn:hover svg { transform: rotate(45deg) scale(1.1); }
+.gem-btn:active { transform: scale(0.88); }
 #day { font-size: 13px; font-weight: 600; }
 #date-line { font-size: 12px; color: var(--secondary); }
 
