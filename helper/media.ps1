@@ -23,8 +23,27 @@ public struct SYSTEM_POWER_STATUS { public byte ACLineStatus; public byte Batter
 public static extern bool GetSystemPowerStatus(out SYSTEM_POWER_STATUS status);
 '@
 
+# Windows 11's Energy Saver (including on AC power) shows up as the "effective power mode".
+# Windows pushes changes to the callback, so reading [Epm]::Mode costs nothing.
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class Epm {
+    public delegate void Callback(int mode, IntPtr context);
+    [DllImport("powrprof.dll")]
+    static extern int PowerRegisterForEffectivePowerModeNotifications(uint version, Callback cb, IntPtr context, out IntPtr handle);
+    static Callback keep;
+    static IntPtr handle;
+    public static volatile int Mode = -1;
+    public static int Start() { keep = (m, c) => { Mode = m; }; return PowerRegisterForEffectivePowerModeNotifications(2, keep, IntPtr.Zero, out handle); }
+}
+'@
+$EffectiveModeEnergySaver = 0
+try { $null = [Epm]::Start() } catch { [Console]::Error.WriteLine("effective-power-mode: $($_.Exception.Message)") }
+
 function Get-EnergySaver {
     try {
+        if ([Epm]::Mode -eq $EffectiveModeEnergySaver) { return $true }
         if ([Windows.System.Power.PowerManager]::EnergySaverStatus.ToString() -eq 'On') { return $true }
         $status = New-Object NotchClock.Power+SYSTEM_POWER_STATUS
         if ([NotchClock.Power]::GetSystemPowerStatus([ref]$status)) { return $status.SystemStatusFlag -eq 1 }
