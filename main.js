@@ -239,6 +239,48 @@ ipcMain.on('set-interactive', (_e, interactive) => {
   win.setIgnoreMouseEvents(!interactive, { forward: true });
 });
 
+// ---- reliable "mouse left the island" -------------------------------------------------------
+// With click-through enabled, Windows sometimes never delivers a mouseleave (fast flicks, or the
+// cursor leaving straight off the top edge), which left the panel stuck open. While the panel is
+// open we check the real cursor position and close it as soon as the cursor is outside.
+
+const HOVER_POLL_MS = 50;
+const HOVER_SLACK = 2; // px of tolerance around the island edge
+let hoverPoll = null;
+let openSize = null;
+
+function stopHoverPoll() {
+  if (hoverPoll) clearInterval(hoverPoll);
+  hoverPoll = null;
+  openSize = null;
+}
+
+function checkPointer() {
+  if (!win || win.isDestroyed() || !openSize) {
+    stopHoverPoll();
+    return;
+  }
+  const cursor = screen.getCursorScreenPoint();
+  const bounds = win.getBounds();
+  const left = bounds.x + (bounds.width - openSize.w) / 2;
+  const inside = cursor.x >= left - HOVER_SLACK && cursor.x <= left + openSize.w + HOVER_SLACK &&
+    cursor.y >= bounds.y && cursor.y <= bounds.y + openSize.h + HOVER_SLACK;
+  if (inside) return;
+  stopHoverPoll();
+  win.setIgnoreMouseEvents(true, { forward: true });
+  win.webContents.send('pointer-left');
+}
+
+ipcMain.on('island-open', (_e, size) => {
+  const w = Number(size && size.w);
+  const h = Number(size && size.h);
+  if (!(w > 0 && h > 0)) return;
+  openSize = { w: Math.min(w, HOST_WIDTH), h: Math.min(h, HOST_HEIGHT) };
+  if (!hoverPoll) hoverPoll = setInterval(checkPointer, HOVER_POLL_MS);
+});
+
+ipcMain.on('island-closed', stopHoverPoll);
+
 const SEEK_COMMAND = /^seek \d{1,6}(\.\d{1,3})?$/;
 
 ipcMain.on('media-command', (_e, command) => {

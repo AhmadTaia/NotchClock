@@ -54,35 +54,29 @@
       </section>
 
       <section id="timer" class="card">
-        <button id="t-head" class="t-head" title="Timer &amp; stopwatch">
+        <button id="t-head" class="t-head" title="Timer">
           <span class="icon t-icon">&#xE916;</span>
-          <span id="t-label">Timer &amp; Stopwatch</span>
+          <span id="t-label">Timer</span>
           <span id="t-mini"></span>
           <span class="icon chev">&#xE70D;</span>
         </button>
         <div class="t-body"><div class="t-body-inner">
-        <div class="seg">
-          <span class="seg-thumb"></span>
-          <button data-mode="timer" class="active">Timer</button>
-          <button data-mode="stopwatch">Stopwatch</button>
-        </div>
-        <div class="timer-row">
-          <button class="btn small adjust" id="t-minus" title="-1 minute"><span class="icon">&#xE738;</span></button>
-          <div id="t-display">5:00</div>
-          <button class="btn small adjust" id="t-plus" title="+1 minute"><span class="icon">&#xE710;</span></button>
-        </div>
-        <div class="track timer-track"><div id="t-fill"></div></div>
-        <div id="t-presets">
-          <button data-min="1">1m</button>
-          <button data-min="5">5m</button>
-          <button data-min="10">10m</button>
-          <button data-min="25">25m</button>
-          <button data-min="60">1h</button>
-        </div>
-        <div class="timer-controls">
-          <button id="t-reset" class="pill secondary">Reset</button>
-          <button id="t-start" class="pill primary">Start</button>
-        </div>
+          <div class="timer-row">
+            <button class="btn small" id="t-minus" title="-1 minute"><span class="icon">&#xE738;</span></button>
+            <div id="t-display">5:00</div>
+            <button class="btn small" id="t-plus" title="+1 minute"><span class="icon">&#xE710;</span></button>
+          </div>
+          <div id="t-presets">
+            <button data-min="1">1m</button>
+            <button data-min="5">5m</button>
+            <button data-min="10">10m</button>
+            <button data-min="15">15m</button>
+            <button data-min="30">30m</button>
+          </div>
+          <div class="timer-controls">
+            <button id="t-reset" class="pill secondary">Reset</button>
+            <button id="t-start" class="pill primary">Start</button>
+          </div>
         </div></div>
       </section>
     </div>

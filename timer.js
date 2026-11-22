@@ -1,4 +1,4 @@
-// Timer + stopwatch card. Reports its "live activity" (running time) so the collapsed pill can show it.
+// Simple countdown timer. Reports its "live activity" (time left) so the collapsed notch can show it.
 window.NotchTimer = (() => {
   'use strict';
 
@@ -6,56 +6,39 @@ window.NotchTimer = (() => {
   const MINUTE = 60 * SECOND;
   const MAX_TIMER = 12 * 60 * MINUTE;
   const DEFAULT_TIMER = 5 * MINUTE;
-  const TICK_MS = 100;
+  const TICK_MS = 250;
   const ALARM_MS = 10 * SECOND;
 
   const $ = (id) => document.getElementById(id);
   const card = $('timer');
-  const seg = card.querySelector('.seg');
-  const MODE_LABEL = { timer: 'Timer', stopwatch: 'Stopwatch' };
 
-  let mode = 'timer';
   let timer = { duration: DEFAULT_TIMER, remaining: DEFAULT_TIMER, endAt: 0, running: false };
-  let stopwatch = { elapsed: 0, startAt: 0, running: false };
   let alarm = false;
   let alarmTimeout = 0;
   let tickId = 0;
   let lastActivity = '';
   let activityListener = () => {};
 
-  const timerLeft = () => (timer.running ? Math.max(0, timer.endAt - Date.now()) : timer.remaining);
-  const stopwatchTime = () => (stopwatch.running ? stopwatch.elapsed + Date.now() - stopwatch.startAt : stopwatch.elapsed);
+  const timeLeft = () => (timer.running ? Math.max(0, timer.endAt - Date.now()) : timer.remaining);
 
-  function formatClock(totalSeconds) {
-    const h = Math.floor(totalSeconds / 3600);
-    const m = Math.floor((totalSeconds % 3600) / 60);
-    const s = String(totalSeconds % 60).padStart(2, '0');
+  function format(ms) {
+    const total = Math.ceil(ms / SECOND);
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = String(total % 60).padStart(2, '0');
     return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
   }
 
-  const formatTimer = (ms) => formatClock(Math.ceil(ms / SECOND));
-  const formatStopwatch = (ms) => `${formatClock(Math.floor(ms / SECOND))}.${Math.floor((ms % SECOND) / 100)}`;
-
-  // ---- state changes (each returns a new state object) ----------------------------------
+  // ---- actions (each replaces the timer state with a new object) --------------------------
 
   function startPause() {
-    if (mode === 'timer') {
-      if (timer.running) {
-        timer = { ...timer, remaining: timerLeft(), running: false };
-      } else if (timer.remaining > 0) {
-        timer = { ...timer, endAt: Date.now() + timer.remaining, running: true };
-      }
-    } else if (stopwatch.running) {
-      stopwatch = { ...stopwatch, elapsed: stopwatchTime(), running: false };
-    } else {
-      stopwatch = { ...stopwatch, startAt: Date.now(), running: true };
-    }
+    if (timer.running) timer = { ...timer, remaining: timeLeft(), running: false };
+    else if (timer.remaining > 0) timer = { ...timer, endAt: Date.now() + timer.remaining, running: true };
     update();
   }
 
   function reset() {
-    if (mode === 'timer') timer = { ...timer, remaining: timer.duration, running: false };
-    else stopwatch = { elapsed: 0, startAt: 0, running: false };
+    timer = { ...timer, remaining: timer.duration, running: false };
     update();
   }
 
@@ -67,12 +50,11 @@ window.NotchTimer = (() => {
 
   function adjust(deltaMs) {
     if (timer.running) {
-      const left = Math.max(SECOND, Math.min(MAX_TIMER, timerLeft() + deltaMs));
+      const left = Math.max(SECOND, Math.min(MAX_TIMER, timeLeft() + deltaMs));
       timer = { ...timer, endAt: Date.now() + left, duration: Math.max(timer.duration, left) };
       update();
     } else {
-      const base = timer.remaining === timer.duration ? timer.duration : timer.remaining;
-      setDuration(Math.round((base + deltaMs) / MINUTE) * MINUTE);
+      setDuration(Math.round((timer.remaining + deltaMs) / MINUTE) * MINUTE);
     }
   }
 
@@ -80,7 +62,7 @@ window.NotchTimer = (() => {
     timer = { ...timer, remaining: timer.duration, running: false };
     alarm = true;
     chime();
-    window.notch.timerDone(formatTimer(timer.duration));
+    window.notch.timerDone(format(timer.duration));
     clearTimeout(alarmTimeout);
     alarmTimeout = setTimeout(dismissAlarm, ALARM_MS);
     update();
@@ -117,62 +99,29 @@ window.NotchTimer = (() => {
     }
   }
 
-  // ---- rendering + ticking ------------------------------------------------------------
+  // ---- rendering ----------------------------------------------------------------------
 
   function update() {
-    if (timer.running && timerLeft() <= 0) {
+    if (timer.running && timeLeft() <= 0) {
       finish();
       return;
     }
 
-    const running = mode === 'timer' ? timer.running : stopwatch.running;
-    card.classList.toggle('stopwatch', mode === 'stopwatch');
-    card.classList.toggle('running', running);
-    seg.classList.toggle('stopwatch', mode === 'stopwatch');
-    seg.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.mode === mode));
+    const left = timeLeft();
+    const paused = !timer.running && timer.remaining < timer.duration;
+    card.classList.toggle('running', timer.running);
+    $('t-display').textContent = format(left);
+    $('t-start').textContent = timer.running ? 'Pause' : paused ? 'Resume' : 'Start';
+    $('t-mini').textContent = alarm ? 'Done' : (timer.running || paused) ? format(left) : '';
 
-    if (mode === 'timer') {
-      const left = timerLeft();
-      $('t-display').textContent = formatTimer(left);
-      $('t-fill').style.transform = `scaleX(${timer.duration ? 1 - left / timer.duration : 0})`;
-      const paused = !timer.running && timer.remaining < timer.duration;
-      $('t-start').textContent = timer.running ? 'Pause' : paused ? 'Resume' : 'Start';
-    } else {
-      const elapsed = stopwatchTime();
-      $('t-display').textContent = formatStopwatch(elapsed);
-      $('t-start').textContent = stopwatch.running ? 'Pause' : elapsed > 0 ? 'Resume' : 'Start';
-    }
+    if (timer.running && !tickId) tickId = setInterval(update, TICK_MS);
+    if (!timer.running && tickId) { clearInterval(tickId); tickId = 0; }
 
-    const anyRunning = timer.running || stopwatch.running;
-    if (anyRunning && !tickId) tickId = setInterval(update, TICK_MS);
-    if (!anyRunning && tickId) { clearInterval(tickId); tickId = 0; }
-
-    updateHeader();
     reportActivity();
   }
 
-  /** The slim row shown while the card is closed: what's running and how long. */
-  function updateHeader() {
-    let label = 'Timer & Stopwatch';
-    let mini = '';
-    if (alarm) { label = 'Timer'; mini = 'Done'; }
-    else if (timer.running) { label = MODE_LABEL.timer; mini = formatTimer(timerLeft()); }
-    else if (stopwatch.running) { label = MODE_LABEL.stopwatch; mini = formatClock(Math.floor(stopwatchTime() / SECOND)); }
-    else if (card.classList.contains('open')) label = MODE_LABEL[mode];
-    $('t-label').textContent = label;
-    $('t-mini').textContent = mini;
-  }
-
-  function setOpen(open) {
-    card.classList.toggle('open', open);
-    updateHeader();
-  }
-
   function reportActivity() {
-    let text = '';
-    if (alarm) text = 'Done';
-    else if (timer.running) text = formatTimer(timerLeft());
-    else if (stopwatch.running) text = formatClock(Math.floor(stopwatchTime() / SECOND));
+    const text = alarm ? 'Done' : timer.running ? format(timeLeft()) : '';
     const key = `${text}|${alarm}`;
     if (key === lastActivity) return;
     lastActivity = key;
@@ -181,8 +130,7 @@ window.NotchTimer = (() => {
 
   // ---- wiring -------------------------------------------------------------------------
 
-  $('t-head').addEventListener('click', () => setOpen(!card.classList.contains('open')));
-  seg.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { mode = b.dataset.mode; update(); }));
+  $('t-head').addEventListener('click', () => card.classList.toggle('open'));
   $('t-start').addEventListener('click', startPause);
   $('t-reset').addEventListener('click', reset);
   $('t-plus').addEventListener('click', () => adjust(MINUTE));
@@ -194,6 +142,6 @@ window.NotchTimer = (() => {
   return {
     onActivity(callback) { activityListener = callback; lastActivity = ''; reportActivity(); },
     dismissAlarm,
-    close: () => setOpen(false),
+    close: () => card.classList.remove('open'),
   };
 })();

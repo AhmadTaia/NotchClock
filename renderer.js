@@ -67,6 +67,8 @@
       springs.w.target = EXPANDED_WIDTH;
       springs.h.target = Math.min(MAX_HEIGHT, full.offsetHeight);
       springs.r.target = EXPANDED_RADIUS;
+      // Main process watches the real cursor against this size and tells us when it leaves.
+      window.notch.islandOpen({ w: EXPANDED_WIDTH, h: springs.h.target });
     } else {
       // The pill hugs whatever the collapsed view shows (clock, app icon + bars, timer).
       springs.w.target = Math.max(COLLAPSED_MIN_WIDTH, compactInner.offsetWidth + COLLAPSED_PADDING);
@@ -117,6 +119,7 @@
     if (!expanded) return;
     expanded = false;
     island.classList.remove('expanded');
+    window.notch.islandClosed();
     window.NotchTimer.close(); // reopen compact next time
     retarget();
   }
@@ -138,6 +141,13 @@
   });
 
   window.notch.onBlur(() => { if (!hovering) collapse(); });
+
+  // Backup for missed mouseleave events (see main.js): the cursor is definitely outside.
+  window.notch.onPointerLeft(() => {
+    hovering = false;
+    clearTimeout(collapseTimer);
+    collapse();
+  });
 
   // ---- clock ---------------------------------------------------------------------------
 
