@@ -38,12 +38,15 @@ public static class Epm {
     public static int Start() { keep = (m, c) => { Mode = m; }; return PowerRegisterForEffectivePowerModeNotifications(2, keep, IntPtr.Zero, out handle); }
 }
 '@
-$EffectiveModeEnergySaver = 0
+# 0 = Energy/Battery Saver, 1 = "Better battery" (what many laptops switch to when Energy Saver
+# is turned on). Both count as saving power.
+$EffectiveModeMaxSaving = 1
 try { $null = [Epm]::Start() } catch { [Console]::Error.WriteLine("effective-power-mode: $($_.Exception.Message)") }
 
 function Get-EnergySaver {
     try {
-        if ([Epm]::Mode -eq $EffectiveModeEnergySaver) { return $true }
+        $mode = [Epm]::Mode
+        if ($mode -ge 0 -and $mode -le $EffectiveModeMaxSaving) { return $true }
         if ([Windows.System.Power.PowerManager]::EnergySaverStatus.ToString() -eq 'On') { return $true }
         $status = New-Object NotchClock.Power+SYSTEM_POWER_STATUS
         if ([NotchClock.Power]::GetSystemPowerStatus([ref]$status)) { return $status.SystemStatusFlag -eq 1 }
