@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; media-src 'self' mediastream:">
+  <title>NotchClock</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="island">
+    <!-- Collapsed: a circle with a clock icon; grows into a pill for media / running timers -->
+    <div id="compact">
+      <div id="c-inner">
+        <div id="c-app"></div>
+        <span id="c-clock" class="icon">&#xE121;</span>
+        <div id="c-bars" class="viz"><i></i><i></i><i></i><i></i><i></i></div>
+        <div id="c-timer"><span class="icon">&#xE916;</span><span id="c-timer-text">0:00</span></div>
+      </div>
+    </div>
+
+    <!-- Expanded panel -->
+    <div id="full">
+      <header>
+        <div id="big-time"><span id="hm">--:--</span><span id="sec">:--</span></div>
+        <div id="date"><div id="day"></div><div id="date-line"></div></div>
+      </header>
+
+      <section id="media" class="card">
+        <div id="media-body">
+          <div class="media-top">
+            <div id="m-art" class="art"><span class="icon">&#xEC4F;</span></div>
+            <div class="media-info">
+              <div id="m-title"></div>
+              <div id="m-artist"></div>
+            </div>
+            <div id="m-bars" class="viz"><i></i><i></i><i></i><i></i><i></i></div>
+          </div>
+          <div id="progress">
+            <span id="p-elapsed">0:00</span>
+            <div id="p-track" class="seek"><div class="track"><div id="p-fill"></div></div></div>
+            <span id="p-remaining">-0:00</span>
+          </div>
+          <div class="controls">
+            <button class="btn" data-cmd="prev" title="Previous"><span class="icon">&#xE892;</span></button>
+            <button class="btn big" data-cmd="toggle" title="Play / pause"><span id="pp-icon" class="icon">&#xE768;</span></button>
+            <button class="btn" data-cmd="next" title="Next"><span class="icon">&#xE893;</span></button>
+          </div>
+        </div>
+        <div id="media-empty">Nothing playing</div>
+      </section>
+
+      <section id="timer" class="card">
+        <button id="t-head" class="t-head" title="Timer &amp; stopwatch">
+          <span class="icon t-icon">&#xE916;</span>
+          <span id="t-label">Timer &amp; Stopwatch</span>
+          <span id="t-mini"></span>
+          <span class="icon chev">&#xE70D;</span>
+        </button>
+        <div class="t-body"><div class="t-body-inner">
+        <div class="seg">
+          <span class="seg-thumb"></span>
+          <button data-mode="timer" class="active">Timer</button>
+          <button data-mode="stopwatch">Stopwatch</button>
+        </div>
+        <div class="timer-row">
+          <button class="btn small adjust" id="t-minus" title="-1 minute"><span class="icon">&#xE738;</span></button>
+          <div id="t-display">5:00</div>
+          <button class="btn small adjust" id="t-plus" title="+1 minute"><span class="icon">&#xE710;</span></button>
+        </div>
+        <div class="track timer-track"><div id="t-fill"></div></div>
+        <div id="t-presets">
+          <button data-min="1">1m</button>
+          <button data-min="5">5m</button>
+          <button data-min="10">10m</button>
+          <button data-min="25">25m</button>
+          <button data-min="60">1h</button>
+        </div>
+        <div class="timer-controls">
+          <button id="t-reset" class="pill secondary">Reset</button>
+          <button id="t-start" class="pill primary">Start</button>
+        </div>
+        </div></div>
+      </section>
+    </div>
+  </div>
+  <script src="visualizer.js"></script>
+  <script src="timer.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

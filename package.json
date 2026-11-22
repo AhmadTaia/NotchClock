@@ -1,0 +1,58 @@
+{
+  "name": "notchclock",
+  "productName": "NotchClock",
+  "version": "1.0.0",
+  "description": "A Dynamic Island-style notch for Windows: clock, live media controls with audio-reactive bars, and a timer/stopwatch.",
+  "main": "main.js",
+  "author": "AhmadTaia",
+  "license": "MIT",
+  "homepage": "https://github.com/AhmadTaia/NotchClock#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AhmadTaia/NotchClock.git"
+  },
+  "keywords": ["windows", "dynamic-island", "notch", "clock", "media-controls", "electron"],
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis --x64"
+  },
+  "devDependencies": {
+    "electron": "33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.ahmadtaia.notchclock",
+    "productName": "NotchClock",
+    "copyright": "Copyright © 2026 AhmadTaia",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "style.css",
+      "renderer.js",
+      "timer.js",
+      "visualizer.js",
+      "helper/**",
+      "package.json"
+    ],
+    "asarUnpack": ["helper/**"],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true
+    },
+    "publish": [{ "provider": "github", "owner": "AhmadTaia", "repo": "NotchClock" }]
+  }
+}

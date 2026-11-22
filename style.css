@@ -1,0 +1,237 @@
+:root {
+  --island: #000;
+  --card: #1c1c1e;
+  --card-hover: #2c2c2e;
+  --primary: #fff;
+  --secondary: #8e8e93;
+  --accent: #30d158;
+  --timer: #ff9f0a;
+  --track: #3a3a3c;
+  --wash: rgba(255, 255, 255, 0.16);
+  --viz-color: #fff;
+  --expanded-width: 360px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: transparent;
+  overflow: hidden;
+  font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif;
+  color: var(--primary);
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.icon { font-family: "Segoe Fluent Icons", "Segoe MDL2 Assets"; font-style: normal; line-height: 1; }
+button { font-family: inherit; }
+button:focus { outline: none; }
+
+/* ---- island shell (size + radius driven by the spring in renderer.js) ---- */
+#island {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 30px;
+  border-radius: 15px;
+  background: var(--island);
+  overflow: hidden;
+  box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+}
+#island.alarm { animation: alarm 1s ease-in-out infinite; }
+@keyframes alarm {
+  0%, 100% { box-shadow: 0 0 0 0.5px rgba(255, 159, 10, 0.3); }
+  50% { box-shadow: 0 0 0 2.5px rgba(255, 159, 10, 0.95); }
+}
+
+/* ---- collapsed ---- */
+#compact {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.18s var(--ease-out) 0.1s, filter 0.18s;
+}
+#island.expanded #compact { opacity: 0; filter: blur(4px); transition-delay: 0s; pointer-events: none; }
+
+/* Measured by renderer.js to size the collapsed pill. */
+#c-inner { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+
+#c-clock { font-size: 15px; width: 15px; text-align: center; animation: pop 0.4s var(--ease-back); }
+#island.playing #c-clock, #island.timer-active #c-clock { display: none; }
+
+#c-app { display: none; width: 24px; height: 24px; border-radius: 50%; flex: none; margin-left: -4px; }
+#c-app svg, #c-app img { display: block; width: 100%; height: 100%; }
+#c-app img { object-fit: contain; border-radius: 6px; }
+/* Only while actually playing: pausing or stopping hides the app icon again. */
+#island.playing #c-app { display: block; animation: pop 0.45s var(--ease-back); }
+
+#c-bars { display: none; margin-right: 1px; }
+#island.playing:not(.timer-active) #c-bars { display: flex; animation: pop 0.4s var(--ease-back); }
+
+#c-timer { display: none; align-items: center; gap: 4px; color: var(--timer); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+#c-timer .icon { font-size: 12px; }
+#island.timer-active #c-timer { display: inline-flex; animation: pop 0.45s var(--ease-back); }
+
+@keyframes pop { from { transform: scale(0.3); opacity: 0; } }
+
+/* Audio-reactive bars; heights are set every frame from the real audio spectrum. */
+.viz { display: flex; gap: 2px; align-items: center; height: 14px; }
+.viz i {
+  width: 3px; height: 14px; border-radius: 2px;
+  background: var(--viz-color);
+  transform: scaleY(0.15);
+  will-change: transform;
+}
+
+/* ---- expanded ---- */
+#full {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: var(--expanded-width);
+  margin-left: calc(var(--expanded-width) / -2);
+  padding: 10px 14px 12px;
+  opacity: 0;
+  transform: scale(0.94) translateY(-6px);
+  transform-origin: top center;
+  pointer-events: none;
+  transition: opacity 0.14s, transform 0.2s var(--ease-out);
+}
+#island.expanded #full {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  transition: opacity 0.26s 0.08s, transform 0.45s var(--ease-back) 0.04s;
+}
+
+header { display: flex; justify-content: space-between; align-items: center; }
+#big-time {
+  display: flex; align-items: baseline;
+  font-size: 34px; font-weight: 600; letter-spacing: -1px; line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+#sec { font-size: 18px; font-weight: 500; letter-spacing: 0; color: var(--secondary); margin-left: 2px; }
+#date { text-align: right; }
+#day { font-size: 13px; font-weight: 600; }
+#date-line { font-size: 12px; color: var(--secondary); }
+
+.card { background: var(--card); border-radius: 18px; margin-top: 8px; padding: 10px; }
+
+/* media card */
+#media-empty { color: var(--secondary); font-size: 13px; text-align: center; padding: 4px 0; }
+#media-body { display: none; }
+#island.has-media #media-body { display: block; }
+#island.has-media #media-empty { display: none; }
+
+.media-top { display: flex; align-items: center; gap: 10px; }
+.art { background: var(--track) center / cover no-repeat; display: flex; align-items: center; justify-content: center; color: var(--secondary); }
+#m-art { width: 48px; height: 48px; border-radius: 11px; flex: none; font-size: 22px; }
+#m-art.loaded .icon { display: none; }
+.media-info { min-width: 0; flex: 1; }
+#m-title, #m-artist { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#m-title { font-size: 14px; font-weight: 600; }
+#m-artist { font-size: 12px; color: var(--secondary); margin-top: 2px; }
+#m-bars { flex: none; opacity: 0.25; transition: opacity 0.3s; }
+#island.playing #m-bars { opacity: 1; }
+
+#progress { display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; gap: 6px; margin-top: 8px; font-size: 10px; color: var(--secondary); font-variant-numeric: tabular-nums; }
+#progress.hidden { display: none; }
+#p-remaining { text-align: right; }
+.track { height: 4px; border-radius: 2px; background: var(--track); overflow: hidden; }
+#p-fill, #t-fill { height: 100%; width: 100%; border-radius: 2px; transform-origin: left; transform: scaleX(0); }
+#p-fill { background: var(--primary); transition: transform 0.5s linear; }
+
+/* Seek bar: a taller invisible hit area around the thin track, which thickens on hover. */
+.seek { padding: 6px 0; cursor: pointer; touch-action: none; }
+.seek .track { transition: height 0.15s var(--ease-out); }
+.seek:hover .track, .seek.scrubbing .track { height: 7px; border-radius: 4px; }
+.seek.scrubbing #p-fill { transition: none; }
+
+.controls { display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: 2px; }
+
+.btn {
+  border: 0; background: transparent; color: var(--primary);
+  width: 36px; height: 36px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 16px; cursor: pointer;
+  transition: background 0.15s, transform 0.3s var(--ease-back), opacity 0.2s;
+}
+.btn:hover { background: var(--wash); }
+.btn:active { transform: scale(0.84); transition-duration: 0.08s; }
+.btn.big { width: 40px; height: 40px; font-size: 18px; }
+.btn.small { width: 30px; height: 30px; font-size: 12px; flex: none; }
+
+/* ---- timer / stopwatch card: a slim row that opens on click ---- */
+#timer { padding: 0; margin-top: 8px; }
+.t-head {
+  width: 100%; display: flex; align-items: center; gap: 8px;
+  border: 0; background: transparent; color: var(--primary);
+  padding: 9px 12px; border-radius: 18px; cursor: pointer;
+  font-size: 13px; font-weight: 600; text-align: left;
+  transition: background 0.15s;
+}
+.t-head:hover { background: var(--card-hover); }
+.t-icon { color: var(--timer); font-size: 13px; }
+#t-label { flex: 1; }
+#t-mini { color: var(--timer); font-variant-numeric: tabular-nums; }
+.chev { font-size: 10px; color: var(--secondary); transition: transform 0.35s var(--ease-back); }
+#timer.open .chev { transform: rotate(180deg); }
+
+.t-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.38s var(--ease-out); }
+#timer.open .t-body { grid-template-rows: 1fr; }
+.t-body-inner { overflow: hidden; min-height: 0; padding: 0 12px; opacity: 0; transition: opacity 0.2s, padding 0.38s var(--ease-out); }
+#timer.open .t-body-inner { padding: 0 12px 12px; opacity: 1; transition-delay: 0.06s, 0s; }
+
+.seg {
+  position: relative; display: grid; grid-template-columns: 1fr 1fr;
+  background: #2c2c2e; border-radius: 10px; padding: 2px;
+}
+.seg button {
+  position: relative; z-index: 1; border: 0; background: transparent; color: var(--secondary);
+  font-size: 12px; font-weight: 600; padding: 5px 0; cursor: pointer; transition: color 0.2s;
+}
+.seg button.active { color: var(--primary); }
+.seg-thumb {
+  position: absolute; top: 2px; bottom: 2px; left: 2px; width: calc(50% - 2px);
+  background: #48484a; border-radius: 8px;
+  transition: transform 0.4s var(--ease-back);
+}
+.seg.stopwatch .seg-thumb { transform: translateX(100%); }
+
+.timer-row { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+#t-display { font-size: 30px; font-weight: 600; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; letter-spacing: -0.5px; transition: color 0.2s; }
+#timer.running #t-display { color: var(--timer); }
+#timer.stopwatch .adjust { visibility: hidden; }
+
+.timer-track { margin-top: 6px; }
+#t-fill { background: var(--timer); transition: transform 0.15s linear; }
+#timer.stopwatch .timer-track { visibility: hidden; }
+
+#t-presets { display: flex; gap: 6px; justify-content: center; margin-top: 8px; }
+#t-presets button {
+  border: 0; border-radius: 999px; background: #2c2c2e; color: var(--primary);
+  font-size: 12px; padding: 4px 11px; cursor: pointer;
+  transition: background 0.15s, transform 0.3s var(--ease-back);
+}
+#t-presets button:hover { background: #3a3a3c; }
+#t-presets button:active { transform: scale(0.9); }
+#timer.stopwatch #t-presets, #timer.running #t-presets { display: none; }
+
+.timer-controls { display: flex; gap: 10px; margin-top: 10px; }
+.pill {
+  flex: 1; border: 0; border-radius: 999px; padding: 7px 0;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: background 0.15s, transform 0.3s var(--ease-back), filter 0.15s;
+}
+.pill:active { transform: scale(0.95); }
+.pill.secondary { background: #2c2c2e; color: var(--primary); }
+.pill.secondary:hover { background: #3a3a3c; }
+.pill.primary { background: rgba(48, 209, 88, 0.2); color: var(--accent); }
+.pill.primary:hover { filter: brightness(1.25); }
+#timer.running .pill.primary { background: rgba(255, 159, 10, 0.2); color: var(--timer); }
