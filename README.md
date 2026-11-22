@@ -4,7 +4,7 @@ A tiny Dynamic Island–style notch for Windows. It hangs from the top edge of y
 
 ## Features
 
-- **Stays out of the way:** collapsed, it's a small notch showing your battery level (green while charging, red when low), flush with the top edge of the screen and short enough not to cover your browser tabs. Clicks anywhere outside it go straight through to your apps.
+- **Stays out of the way:** collapsed, it's a small notch showing your battery level (green while charging, yellow with Energy Saver on, red when low), flush with the top edge of the screen and short enough not to cover your browser tabs. Clicks anywhere outside it go straight through to your apps.
 - **Hover to expand:** a fluid, spring-animated panel with the time (including seconds) and the date.
 - **Live media controls:** works with anything Windows can control (Spotify, YouTube, YouTube Music, Instagram, Netflix, VLC and more).
   - artwork, title and artist

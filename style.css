@@ -91,6 +91,8 @@ button:focus { outline: none; }
 #c-battery.charging #c-batt-bolt { display: block; }
 #c-battery.low #c-batt-fill { fill: #ff453a; }
 #c-battery.low #c-batt-pct { color: #ff453a; }
+/* Energy Saver on: yellow bar, taking priority over charging/low (declared last on purpose). */
+#c-battery.saver #c-batt-fill { fill: #ffd60a; }
 
 #c-clock { display: none; width: 16px; height: 16px; color: var(--primary); animation: pop 0.4s var(--ease-back); }
 #island.no-battery #c-battery { display: none; }

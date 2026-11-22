@@ -282,6 +282,8 @@
 
   function applyMedia(state) {
     if (!state || typeof state !== 'object') return;
+    // Windows Energy Saver turns the battery bar yellow (like Low Power Mode).
+    $('c-battery').classList.toggle('saver', state.saver === true);
     const previous = media;
     const app = detectApp(state);
     media = {

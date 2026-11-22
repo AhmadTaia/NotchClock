@@ -12,7 +12,28 @@ $null = [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager,
 $null = [Windows.Storage.Streams.IRandomAccessStreamWithContentType, Windows.Storage.Streams, ContentType = WindowsRuntime]
 $null = [Windows.Storage.Streams.DataReader, Windows.Storage.Streams, ContentType = WindowsRuntime]
 
-$asTaskMethod = [System.WindowsRuntimeSystemExtensions].GetMethods() |
+$null = [Windows.System.Power.PowerManager, Windows.System.Power, ContentType = WindowsRuntime]
+
+# GetSystemPowerStatus's saver flag also covers Windows 11 Energy Saver while plugged in,
+# which the WinRT EnergySaverStatus property can report as "Disabled".
+Add-Type -Namespace NotchClock -Name Power -MemberDefinition @'
+[StructLayout(LayoutKind.Sequential)]
+public struct SYSTEM_POWER_STATUS { public byte ACLineStatus; public byte BatteryFlag; public byte BatteryLifePercent; public byte SystemStatusFlag; public int BatteryLifeTime; public int BatteryFullLifeTime; }
+[DllImport("kernel32.dll")]
+public static extern bool GetSystemPowerStatus(out SYSTEM_POWER_STATUS status);
+'@
+
+function Get-EnergySaver {
+    try {
+        if ([Windows.System.Power.PowerManager]::EnergySaverStatus.ToString() -eq 'On') { return $true }
+        $status = New-Object NotchClock.Power+SYSTEM_POWER_STATUS
+        if ([NotchClock.Power]::GetSystemPowerStatus([ref]$status)) { return $status.SystemStatusFlag -eq 1 }
+    }
+    catch { [Console]::Error.WriteLine("energy-saver: $($_.Exception.Message)") }
+    return $false
+}
+
+$asTaskMethod =[System.WindowsRuntimeSystemExtensions].GetMethods() |
     Where-Object { $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation`1' } |
     Select-Object -First 1
 
@@ -136,7 +157,11 @@ function Send-MediaCommand([string]$command) {
 }
 
 function Write-State {
-    try { $json = (Get-State) | ConvertTo-Json -Compress }
+    try {
+        $state = Get-State
+        $state.saver = Get-EnergySaver
+        $json = $state | ConvertTo-Json -Compress
+    }
     catch {
         [Console]::Error.WriteLine("state: $($_.Exception.Message)")
         $script:lastKey = $null
