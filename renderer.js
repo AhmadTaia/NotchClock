@@ -382,10 +382,48 @@
     if (!expanded) retarget();
   });
 
+  // ---- battery (idle view) ---------------------------------------------------------------
+
+  const BATTERY_FILL_WIDTH = 18.7; // matches the inner rect in index.html
+  const LOW_BATTERY = 0.2;
+
+  async function initBattery() {
+    let battery = null;
+    try {
+      battery = navigator.getBattery ? await navigator.getBattery() : null;
+    } catch (err) {
+      window.notch.logError('battery', err && err.message ? err.message : String(err));
+    }
+    // Desktops report a permanently full, charging "battery"; show the clock there instead.
+    const noBattery = !battery || (battery.level === 1 && battery.charging && battery.chargingTime === 0 && battery.dischargingTime === Infinity);
+    if (noBattery) {
+      island.classList.add('no-battery');
+      if (!expanded) retarget();
+      return;
+    }
+
+    const holder = $('c-battery');
+    const render = () => {
+      const level = Math.max(0, Math.min(1, battery.level));
+      const pct = Math.round(level * 100);
+      $('c-batt-fill').setAttribute('width', (BATTERY_FILL_WIDTH * Math.max(level, 0.04)).toFixed(2));
+      $('c-batt-pct').textContent = `${pct}%`;
+      holder.classList.toggle('charging', battery.charging);
+      holder.classList.toggle('low', !battery.charging && level <= LOW_BATTERY);
+      holder.title = `Battery ${pct}%${battery.charging ? ' (charging)' : ''}`;
+      if (!expanded) retarget();
+    };
+    // Event-driven: Windows tells us when the level or charging state changes, no polling.
+    battery.addEventListener('levelchange', render);
+    battery.addEventListener('chargingchange', render);
+    render();
+  }
+
   // ---- boot ----------------------------------------------------------------------------
 
   window.notch.onMedia(applyMedia);
   setInterval(() => { if (expanded) updateProgress(); }, PROGRESS_TICK_MS);
   scheduleClock();
+  initBattery();
   applyFrame();
 })();
