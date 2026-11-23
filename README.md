@@ -11,7 +11,8 @@ A tiny Dynamic Island–style notch for Windows. It hangs from the top edge of y
   - play / pause / next / previous
   - **drag the progress bar** to jump anywhere in the track
 - **Real app icons:** while something plays, the pill shows that app's icon. Desktop apps use their own Windows icon. Recognised sites (YouTube, YouTube Music, Instagram, TikTok, Netflix, Twitch, SoundCloud, Facebook, X) get their logo. The icon hides when you pause.
-- **Audio-reactive bars:** the bars follow the actual sound coming out of your speakers (bass on the left, treble on the right) in the app's colour.
+- **Audio-reactive bars:** the bars follow the actual sound coming out of your speakers (bass on the left, treble on the right) in the app's colour, and keep working when you switch to earbuds or headphones.
+- **Galaxy Buds battery:** while your Galaxy Buds (Buds2 / Pro / Buds3 series) are connected, the panel shows the charge of the left bud, right bud and case. The case reading appears once a bud is back in it.
 - **Timer:** a compact row that opens when you click it: presets, -/+ a minute, start/pause. While it runs, the collapsed notch shows the countdown and you get a chime and a notification when it finishes.
 - **Lightweight and always on:** starts with Windows and lives in the system tray. **Ctrl+Alt+N** shows or hides it.
 

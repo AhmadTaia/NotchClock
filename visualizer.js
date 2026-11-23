@@ -38,6 +38,8 @@ window.NotchViz = (() => {
           stream.getVideoTracks().forEach((track) => track.stop());
           const audioTracks = stream.getAudioTracks();
           if (audioTracks.length === 0) throw new Error('no loopback audio track');
+          captureTracks = audioTracks;
+          audioTracks.forEach((track) => track.addEventListener('ended', reattach));
 
           audioContext = new AudioContext();
           const source = audioContext.createMediaStreamSource(new MediaStream(audioTracks));
@@ -63,6 +65,34 @@ window.NotchViz = (() => {
     }
     return starting;
   }
+
+  // Loopback capture is tied to the output device that was default when it started. When the
+  // output changes (earbuds/headphones connect or disconnect), drop it and capture the new one.
+  let captureTracks = [];
+  let reattachTimer = 0;
+  const REATTACH_DELAY_MS = 700; // let Windows finish switching the default device
+
+  function teardown() {
+    captureTracks.forEach((track) => track.stop());
+    captureTracks = [];
+    if (audioContext) audioContext.close().catch(() => {});
+    audioContext = null;
+    analyser = null;
+    starting = null;
+  }
+
+  function reattach() {
+    clearTimeout(reattachTimer);
+    reattachTimer = setTimeout(async () => {
+      teardown();
+      if (!running) return; // will capture the right device next time playback starts
+      running = false;
+      cancelAnimationFrame(frameId);
+      await start();
+    }, REATTACH_DELAY_MS);
+  }
+
+  if (navigator.mediaDevices) navigator.mediaDevices.addEventListener('devicechange', reattach);
 
   function frame(time) {
     if (!running) return;

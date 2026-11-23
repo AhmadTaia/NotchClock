@@ -284,6 +284,7 @@
     if (!state || typeof state !== 'object') return;
     // Windows Energy Saver turns the battery bar yellow (like Low Power Mode).
     $('c-battery').classList.toggle('saver', state.saver === true);
+    applyBuds(state.buds);
     const previous = media;
     const app = detectApp(state);
     media = {
@@ -383,6 +384,34 @@
     $('c-timer-text').textContent = text;
     if (!expanded) retarget();
   });
+
+  // ---- Galaxy Buds battery card ---------------------------------------------------------
+
+  const BUD_LOW = 20;
+  const WEAR_DISCONNECTED = 0;
+  const WEAR_IN_CASE = 3;
+
+  function setBud(part, value, known) {
+    const el = document.querySelector(`.bud[data-part="${part}"]`);
+    const pct = Number(value);
+    const valid = known && Number.isFinite(pct) && pct >= 0 && pct <= 100;
+    el.classList.toggle('na', !valid);
+    el.classList.toggle('low', valid && pct <= BUD_LOW);
+    el.querySelector('.bud-bar i').style.width = valid ? `${pct}%` : '0';
+    el.querySelector('.bud-pct').textContent = valid ? `${pct}%` : '—';
+  }
+
+  function applyBuds(buds) {
+    const connected = !!buds && buds.connected === true;
+    island.classList.toggle('has-buds', connected);
+    if (!connected) return;
+    $('buds-name').textContent = String(buds.name || 'Galaxy Buds').slice(0, 40);
+    setBud('left', buds.left, buds.wearLeft !== WEAR_DISCONNECTED);
+    setBud('right', buds.right, buds.wearRight !== WEAR_DISCONNECTED);
+    // The buds only know the case's charge while at least one of them is inside it.
+    const caseKnown = Number(buds.case) > 0 || buds.wearLeft === WEAR_IN_CASE || buds.wearRight === WEAR_IN_CASE;
+    setBud('case', buds.case, caseKnown);
+  }
 
   // ---- battery (idle view) ---------------------------------------------------------------
 
