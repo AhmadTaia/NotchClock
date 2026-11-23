@@ -163,20 +163,19 @@ header { display: flex; justify-content: space-between; align-items: center; }
 .card { background: var(--card); border-radius: 18px; margin-top: 8px; padding: 10px; }
 
 /* earbuds battery card (only while Galaxy Buds are connected) */
-#buds { display: none; padding: 9px 12px; }
+#buds { display: none; padding: 8px 14px; }
 #island.has-buds #buds { display: block; }
-.buds-row { display: flex; align-items: center; gap: 12px; }
-.buds-name { flex: 1; min-width: 0; display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; }
-.buds-name svg { width: 16px; height: 16px; flex: none; color: var(--secondary); }
-#buds-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bud { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 34px; }
+.buds-row { display: flex; align-items: center; justify-content: space-around; }
+.bud { display: flex; align-items: center; gap: 8px; }
+.bud-img { width: 18px; height: 30px; flex: none; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)); }
+.bud-img.flip { transform: scaleX(-1); }
+.case-img { width: 30px; height: 24px; flex: none; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)); }
+.bud-txt { display: flex; flex-direction: column; line-height: 1.15; }
 .bud-label { font-size: 10px; font-weight: 600; color: var(--secondary); }
-.bud-bar { width: 28px; height: 5px; border-radius: 3px; background: var(--track); overflow: hidden; }
-.bud-bar i { display: block; height: 100%; width: 0; border-radius: 3px; background: var(--primary); transition: width 0.4s var(--ease-out); }
-.bud-pct { font-size: 11px; font-variant-numeric: tabular-nums; }
-.bud.low .bud-bar i { background: #ff453a; }
+.bud-pct { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .bud.low .bud-pct { color: #ff453a; }
-.bud.na .bud-pct { color: var(--secondary); }
+.bud.na .bud-pct { color: var(--secondary); font-weight: 500; }
+.bud.stale .bud-pct { color: var(--secondary); } /* last known case charge */
 
 /* media card */
 #media-empty { color: var(--secondary); font-size: 13px; text-align: center; padding: 4px 0; }

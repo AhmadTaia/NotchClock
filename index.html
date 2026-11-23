@@ -7,6 +7,32 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="budSilver" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#80858d"/><stop offset=".35" stop-color="#eceef1"/>
+        <stop offset=".62" stop-color="#c4c8ce"/><stop offset="1" stop-color="#8b9098"/>
+      </linearGradient>
+      <linearGradient id="budTip" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c7cad0"/>
+      </linearGradient>
+      <linearGradient id="caseLid" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="rgba(235,240,246,.55)"/><stop offset="1" stop-color="rgba(200,206,214,.2)"/>
+      </linearGradient>
+      <symbol id="bud-shape" viewBox="0 0 24 40">
+        <ellipse cx="7.6" cy="8.6" rx="5.2" ry="5.8" fill="url(#budTip)"/>
+        <path d="M9 3.5c4.6-.6 9 2.2 9.6 6.6.4 2.6-.5 4.8-2.1 6.2H10.4C7.6 14.6 6 12 6.4 8.8 6.7 6 7.6 3.9 9 3.5z" fill="url(#budSilver)"/>
+        <path d="M11.2 14.6h5.6l-.6 22.2a2.2 2.2 0 0 1-2.2 2.1 2.2 2.2 0 0 1-2.2-2.1z" fill="url(#budSilver)"/>
+        <path d="M14 17.5v17" stroke="#ffffff" stroke-width=".9" stroke-linecap="round" opacity=".9"/>
+      </symbol>
+      <symbol id="case-shape" viewBox="0 0 40 32">
+        <rect x="2" y="12" width="36" height="18" rx="8" fill="url(#budSilver)"/>
+        <rect x="2" y="2" width="36" height="17" rx="8" fill="url(#caseLid)" stroke="rgba(255,255,255,.5)" stroke-width=".8"/>
+        <path d="M4 18.5h32" stroke="rgba(0,0,0,.35)" stroke-width=".8"/>
+        <rect x="18" y="23.5" width="4" height="1.4" rx=".7" fill="#30d158"/>
+      </symbol>
+    </defs>
+  </svg>
   <div id="notch">
   <div id="island">
     <!-- Collapsed: a circle with a clock icon; grows into a pill for media / running timers -->
@@ -40,13 +66,18 @@
 
       <section id="buds" class="card" aria-label="Earbuds battery">
         <div class="buds-row">
-          <div class="buds-name">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 4a3.5 3.5 0 0 0-1 6.86V18a1.5 1.5 0 0 0 3 0v-7.4A3.5 3.5 0 0 0 7.5 4zm9 0a3.5 3.5 0 0 0-2 6.6V18a1.5 1.5 0 0 0 3 0v-7.14A3.5 3.5 0 0 0 16.5 4z" fill="currentColor"/></svg>
-            <span id="buds-name">Galaxy Buds</span>
+          <div class="bud" data-part="left" title="Left earbud">
+            <svg class="bud-img" viewBox="0 0 24 40" aria-hidden="true"><use href="#bud-shape"/></svg>
+            <div class="bud-txt"><span class="bud-label">L</span><span class="bud-pct">—</span></div>
           </div>
-          <div class="bud" data-part="left"><span class="bud-label">L</span><div class="bud-bar"><i></i></div><span class="bud-pct">—</span></div>
-          <div class="bud" data-part="right"><span class="bud-label">R</span><div class="bud-bar"><i></i></div><span class="bud-pct">—</span></div>
-          <div class="bud" data-part="case"><span class="bud-label">Case</span><div class="bud-bar"><i></i></div><span class="bud-pct">—</span></div>
+          <div class="bud" data-part="right" title="Right earbud">
+            <svg class="bud-img flip" viewBox="0 0 24 40" aria-hidden="true"><use href="#bud-shape"/></svg>
+            <div class="bud-txt"><span class="bud-label">R</span><span class="bud-pct">—</span></div>
+          </div>
+          <div class="bud" data-part="case" title="Case">
+            <svg class="case-img" viewBox="0 0 40 32" aria-hidden="true"><use href="#case-shape"/></svg>
+            <div class="bud-txt"><span class="bud-label">Case</span><span class="bud-pct">—</span></div>
+          </div>
         </div>
       </section>
 

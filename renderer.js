@@ -389,15 +389,28 @@
 
   const BUD_LOW = 20;
   const WEAR_DISCONNECTED = 0;
-  const WEAR_IN_CASE = 3;
+  const CASE_MEMORY_KEY = 'notchclock.lastCaseBattery';
 
-  function setBud(part, value, known) {
+  function rememberCase(pct) {
+    try { localStorage.setItem(CASE_MEMORY_KEY, String(pct)); } catch { /* storage unavailable */ }
+  }
+
+  function lastKnownCase() {
+    try {
+      const pct = Number(localStorage.getItem(CASE_MEMORY_KEY));
+      return pct > 0 && pct <= 100 ? pct : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function setBud(part, value, { known, stale = false }) {
     const el = document.querySelector(`.bud[data-part="${part}"]`);
     const pct = Number(value);
     const valid = known && Number.isFinite(pct) && pct >= 0 && pct <= 100;
     el.classList.toggle('na', !valid);
-    el.classList.toggle('low', valid && pct <= BUD_LOW);
-    el.querySelector('.bud-bar i').style.width = valid ? `${pct}%` : '0';
+    el.classList.toggle('stale', valid && stale);
+    el.classList.toggle('low', valid && !stale && pct <= BUD_LOW);
     el.querySelector('.bud-pct').textContent = valid ? `${pct}%` : '—';
   }
 
@@ -405,12 +418,19 @@
     const connected = !!buds && buds.connected === true;
     island.classList.toggle('has-buds', connected);
     if (!connected) return;
-    $('buds-name').textContent = String(buds.name || 'Galaxy Buds').slice(0, 40);
-    setBud('left', buds.left, buds.wearLeft !== WEAR_DISCONNECTED);
-    setBud('right', buds.right, buds.wearRight !== WEAR_DISCONNECTED);
-    // The buds only know the case's charge while at least one of them is inside it.
-    const caseKnown = Number(buds.case) > 0 || buds.wearLeft === WEAR_IN_CASE || buds.wearRight === WEAR_IN_CASE;
-    setBud('case', buds.case, caseKnown);
+    setBud('left', buds.left, { known: buds.wearLeft !== WEAR_DISCONNECTED });
+    setBud('right', buds.right, { known: buds.wearRight !== WEAR_DISCONNECTED });
+
+    // The buds only know the case's charge while one of them is inside it; otherwise they send 0.
+    // Like Galaxy Wearable, keep showing the last charge we saw (dimmed) in the meantime.
+    const caseNow = Number(buds.case);
+    if (caseNow > 0 && caseNow <= 100) {
+      rememberCase(caseNow);
+      setBud('case', caseNow, { known: true });
+    } else {
+      const last = lastKnownCase();
+      setBud('case', last, { known: last !== null, stale: true });
+    }
   }
 
   // ---- battery (idle view) ---------------------------------------------------------------
