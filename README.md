@@ -50,6 +50,7 @@ The installer is written to `dist/`.
 | Seek in a track | Click or drag the progress bar |
 | Timer | Click the **Timer** row |
 | Show / hide | **Ctrl+Alt+N** or double-click the tray icon |
+| Restart if it gets stuck | Right-click the tray icon → **Restart NotchClock** |
 | Start with Windows on/off, exit | Right-click the tray icon |
 
 ## How it works

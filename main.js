@@ -218,6 +218,14 @@ function drawTrayIcon() {
   return nativeImage.createFromBitmap(buf, { width: size, height: size });
 }
 
+/** Fully restarts the app (window, media helper and all) in case anything gets stuck. */
+function restartApp() {
+  // In dev (electron.exe + folder) the folder must be passed again; an installed build needs nothing.
+  if (app.isPackaged) app.relaunch();
+  else app.relaunch({ args: [app.getAppPath()] });
+  app.quit();
+}
+
 function createTray() {
   tray = new Tray(drawTrayIcon());
   tray.setToolTip('NotchClock');
@@ -226,6 +234,7 @@ function createTray() {
     { label: 'Start with Windows', type: 'checkbox', checked: isStartupEnabled(), click: (item) => setStartup(item.checked) },
     { label: 'Open data folder', click: () => shell.openPath(app.getPath('userData')) },
     { type: 'separator' },
+    { label: 'Restart NotchClock', click: restartApp },
     { label: 'Exit', click: () => app.quit() },
   ]);
   tray.setContextMenu(menu);
