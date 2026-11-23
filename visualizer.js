@@ -71,6 +71,10 @@ window.NotchViz = (() => {
   let captureTracks = [];
   let reattachTimer = 0;
   const REATTACH_DELAY_MS = 700; // let Windows finish switching the default device
+  const SILENCE_REATTACH_MS = 2500;
+  const WATCHDOG_COOLDOWN_MS = 6000;
+  let silentSince = 0;
+  let lastWatchdogReattach = 0;
 
   function teardown() {
     captureTracks.forEach((track) => track.stop());
@@ -100,6 +104,23 @@ window.NotchViz = (() => {
     if (time - lastDraw < FRAME_INTERVAL_MS) return;
     lastDraw = time;
     analyser.getByteFrequencyData(bins);
+
+    // Watchdog: Bluetooth earbuds can drop/reconnect or switch modes without Windows reporting a
+    // device change, which leaves the capture silently dead. Real music is never pure digital
+    // silence for seconds, so if that happens while playing, capture the current output again.
+    let energy = 0;
+    for (let b = 1; b < bins.length; b++) energy += bins[b];
+    if (energy > 0) {
+      silentSince = 0;
+    } else {
+      if (!silentSince) silentSince = time;
+      if (time - silentSince > SILENCE_REATTACH_MS && time - lastWatchdogReattach > WATCHDOG_COOLDOWN_MS) {
+        lastWatchdogReattach = time;
+        silentSince = 0;
+        reattach();
+        return;
+      }
+    }
     const groups = bars();
 
     for (let i = 0; i < levels.length; i++) {
