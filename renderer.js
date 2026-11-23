@@ -391,6 +391,23 @@
   const WEAR_DISCONNECTED = 0;
   const CASE_MEMORY_KEY = 'notchclock.lastCaseBattery';
 
+  // Optional real photos: drop left.png / right.png / case.png into assets/buds/ (kept out of git)
+  // and they replace the built-in drawings. Missing files simply keep the drawings.
+  const BUD_PHOTO_DIR = 'assets/buds';
+  function loadBudPhotos() {
+    ['left', 'right', 'case'].forEach((part) => {
+      const img = new Image();
+      img.alt = '';
+      img.className = part === 'case' ? 'case-img photo' : 'bud-img photo';
+      img.onload = () => {
+        const drawing = document.querySelector(`.bud[data-part="${part}"] svg`);
+        if (drawing) drawing.replaceWith(img);
+      };
+      img.src = `${BUD_PHOTO_DIR}/${part}.png`;
+    });
+  }
+  loadBudPhotos();
+
   function rememberCase(pct) {
     try { localStorage.setItem(CASE_MEMORY_KEY, String(pct)); } catch { /* storage unavailable */ }
   }
