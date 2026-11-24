@@ -489,7 +489,8 @@
   function applyBuds(buds) {
     const connected = !!buds && buds.connected === true;
     island.classList.toggle('has-buds', connected);
-    noteBudsConnection(connected);
+    // Animate on the Bluetooth link itself; the battery reading can take a few more seconds.
+    noteBudsConnection(connected || (!!buds && buds.linked === true));
     if (!connected) return;
     setBud('left', buds.left, { known: buds.wearLeft !== WEAR_DISCONNECTED });
     setBud('right', buds.right, { known: buds.wearRight !== WEAR_DISCONNECTED });

@@ -26,6 +26,7 @@ $script:Buds = @{
     socket = $null; reader = $null; connectTask = $null; loadTask = $null
     buffer = New-Object System.Collections.Generic.List[byte]
     name = 'Galaxy Buds'; left = -1; right = -1; case = -1; wearLeft = 0; wearRight = 0; connected = $false
+    service = $null; device = $null; wasLinked = $false
 }
 
 function Start-TaskForOperation($operation, [Type]$resultType) {
@@ -44,13 +45,17 @@ function Reset-BudsConnection([int]$retrySeconds) {
 
 function Start-BudsConnect {
     $b = $script:Buds
-    $sid = [Windows.Devices.Bluetooth.Rfcomm.RfcommServiceId]::FromUuid([guid]$BudsServiceUuid)
-    $selector = [Windows.Devices.Bluetooth.Rfcomm.RfcommDeviceService]::GetDeviceSelector($sid)
-    $found = Await ([Windows.Devices.Enumeration.DeviceInformation]::FindAllAsync($selector)) ([Windows.Devices.Enumeration.DeviceInformationCollection])
-    if ($found.Count -eq 0) { Reset-BudsConnection $BudsRetryIdleSec; return }
-
-    $service = Await ([Windows.Devices.Bluetooth.Rfcomm.RfcommDeviceService]::FromIdAsync($found[0].Id)) ([Windows.Devices.Bluetooth.Rfcomm.RfcommDeviceService])
-    if (-not $service) { Reset-BudsConnection $BudsRetryIdleSec; return }
+    $service = $b.service
+    if (-not $service) {
+        $sid = [Windows.Devices.Bluetooth.Rfcomm.RfcommServiceId]::FromUuid([guid]$BudsServiceUuid)
+        $selector = [Windows.Devices.Bluetooth.Rfcomm.RfcommDeviceService]::GetDeviceSelector($sid)
+        $found = Await ([Windows.Devices.Enumeration.DeviceInformation]::FindAllAsync($selector)) ([Windows.Devices.Enumeration.DeviceInformationCollection])
+        if ($found.Count -eq 0) { Reset-BudsConnection $BudsRetryIdleSec; return }
+        $service = Await ([Windows.Devices.Bluetooth.Rfcomm.RfcommDeviceService]::FromIdAsync($found[0].Id)) ([Windows.Devices.Bluetooth.Rfcomm.RfcommDeviceService])
+        if (-not $service) { Reset-BudsConnection $BudsRetryIdleSec; return }
+        $b.service = $service
+        $b.device = $service.Device
+    }
     # Only try when Windows says the buds are actually connected, so we never wake them up.
     $device = $service.Device
     if ($device) {
@@ -106,7 +111,13 @@ function Step-Buds {
     try {
         switch ($b.phase) {
             'idle' {
-                if ((Get-Date) -ge $b.nextTry) { Start-BudsConnect }
+                # Once the buds are known, reading the Bluetooth link state is instant, so we react
+                # the moment Windows connects them instead of waiting for the next retry.
+                $linked = Test-BudsLinked
+                if ($linked -and -not $b.wasLinked) { $b.nextTry = [datetime]::MinValue }
+                $b.wasLinked = $linked
+                $due = (Get-Date) -ge $b.nextTry
+                if ($due -and ($linked -or -not $b.device)) { Start-BudsConnect }
             }
             'connecting' {
                 if ($b.connectTask.IsCompleted) {
@@ -143,11 +154,18 @@ function Step-Buds {
     }
 }
 
+function Test-BudsLinked {
+    $d = $script:Buds.device
+    if (-not $d) { return $false }
+    try { return $d.ConnectionStatus.ToString() -eq 'Connected' } catch { return $false }
+}
+
 function Get-BudsState {
     $b = $script:Buds
-    if (-not $b.connected -or $b.left -lt 0) { return @{ connected = $false } }
+    $linked = Test-BudsLinked
+    if (-not $b.connected -or $b.left -lt 0) { return @{ connected = $false; linked = $linked } }
     return @{
-        connected = $true; name = $b.name
+        connected = $true; linked = $true; name = $b.name
         left = $b.left; right = $b.right; case = $b.case
         wearLeft = $b.wearLeft; wearRight = $b.wearRight
     }
