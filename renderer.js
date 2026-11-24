@@ -72,8 +72,9 @@
     } else {
       // The pill hugs whatever the collapsed view shows (clock, app icon + bars, timer).
       springs.w.target = Math.max(COLLAPSED_MIN_WIDTH, compactInner.offsetWidth + COLLAPSED_PADDING);
-      springs.h.target = COLLAPSED_HEIGHT;
-      springs.r.target = COLLAPSED_RADIUS;
+      const toast = island.classList.contains('connect-toast');
+      springs.h.target = toast ? TOAST_HEIGHT : COLLAPSED_HEIGHT;
+      springs.r.target = toast ? TOAST_HEIGHT / 2 : COLLAPSED_RADIUS;
     }
     if (!frameId) {
       lastFrame = 0;
@@ -386,6 +387,59 @@
     if (!expanded) retarget();
   });
 
+  // ---- "Connected" animation for earbuds / headphones --------------------------------------
+
+  const TOAST_HEIGHT = 34;
+  const CONNECT_TOAST_MS = 3200;
+  const HEADPHONE_ICON = '<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9v6a3 3 0 0 0 3 3h1a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1H5v-1a7 7 0 0 1 14 0v1h-2a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h1a3 3 0 0 0 3-3v-6a9 9 0 0 0-9-9z" fill="#fff"/></svg>';
+  let toastTimer = 0;
+  let budsSeen = null;   // null until the first report, so app start doesn't trigger it
+  let phonesSeen = null;
+
+  /** A photo if it exists, otherwise the given drawing. */
+  function photoOr(src, fallbackMarkup, className = '') {
+    const wrap = document.createElement('span');
+    wrap.className = className;
+    const img = new Image();
+    img.alt = '';
+    img.onerror = () => { wrap.innerHTML = fallbackMarkup; };
+    img.src = src;
+    wrap.appendChild(img);
+    return wrap;
+  }
+
+  function showConnectToast(pictures) {
+    $('c-connect-img').replaceChildren(...pictures);
+    island.classList.remove('connect-toast');
+    void island.offsetWidth; // restart the CSS animations
+    island.classList.add('connect-toast');
+    retarget();
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      island.classList.remove('connect-toast');
+      retarget();
+    }, CONNECT_TOAST_MS);
+  }
+
+  function noteBudsConnection(connected) {
+    if (budsSeen === false && connected) {
+      const bud = '<svg viewBox="0 0 24 40"><use href="#bud-shape"/></svg>';
+      showConnectToast([
+        photoOr('assets/buds/left.png', bud),
+        photoOr('assets/buds/right.png', bud, 'bud-r'),
+      ]);
+    }
+    budsSeen = connected;
+  }
+
+  function notePhonesConnection(connected, modelId) {
+    if (phonesSeen === false && connected) {
+      const safeId = /^[a-z0-9-]+$/.test(modelId) ? modelId : '';
+      showConnectToast([photoOr(`assets/headphones/${safeId || 'none'}.png`, HEADPHONE_ICON)]);
+    }
+    phonesSeen = connected;
+  }
+
   // ---- Galaxy Buds battery card ---------------------------------------------------------
 
   const BUD_LOW = 20;
@@ -435,6 +489,7 @@
   function applyBuds(buds) {
     const connected = !!buds && buds.connected === true;
     island.classList.toggle('has-buds', connected);
+    noteBudsConnection(connected);
     if (!connected) return;
     setBud('left', buds.left, { known: buds.wearLeft !== WEAR_DISCONNECTED });
     setBud('right', buds.right, { known: buds.wearRight !== WEAR_DISCONNECTED });
@@ -470,6 +525,7 @@
   function applyHeadphones(phones) {
     const connected = !!phones && phones.connected === true;
     island.classList.toggle('has-phones', connected);
+    notePhonesConnection(connected, String((phones && phones.id) || ''));
     if (!connected) return;
     const modelId = String(phones.id || '');
     if (modelId !== phonesModel) {

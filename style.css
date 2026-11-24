@@ -284,3 +284,21 @@ header { display: flex; justify-content: space-between; align-items: center; }
 .bud-img.photo, .case-img.photo { object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)); }
 .bud-img.photo { width: 22px; height: 32px; }
 .case-img.photo { width: 34px; height: 28px; }
+
+/* "Connected" live activity when earbuds / headphones connect */
+#c-connect { display: none; align-items: center; gap: 8px; }
+#island.connect-toast #c-inner > *:not(#c-connect) { display: none !important; }
+#island.connect-toast #c-connect { display: inline-flex; }
+#c-connect-img { display: inline-flex; align-items: center; gap: 1px; animation: connect-pop 0.7s var(--ease-back) both; }
+#c-connect-img img { height: 24px; width: auto; max-width: 30px; object-fit: contain; animation: connect-float 1.4s 0.7s ease-in-out infinite alternate; }
+#c-connect-img svg { height: 24px; width: 15px; }
+#c-connect-img .bud-r svg { transform: scaleX(-1); }
+.c-connect-txt { font-size: 13px; font-weight: 600; color: var(--accent); white-space: nowrap; animation: connect-text 0.45s 0.25s var(--ease-out) both; }
+@keyframes connect-pop {
+  0% { transform: scale(0) rotate(-25deg); opacity: 0; }
+  55% { transform: scale(1.18) rotate(8deg); opacity: 1; }
+  78% { transform: scale(0.95) rotate(-4deg); }
+  100% { transform: none; }
+}
+@keyframes connect-float { from { transform: translateY(0); } to { transform: translateY(-1.5px); } }
+@keyframes connect-text { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
