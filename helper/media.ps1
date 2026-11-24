@@ -109,6 +109,7 @@ function Get-SourceProcessInfo([string]$appId) {
 }
 
 . "$PSScriptRoot\buds.ps1"   # Galaxy Buds battery (Step-Buds / Get-BudsState)
+. "$PSScriptRoot\headphones.ps1"   # other Bluetooth headphones (Get-HeadphonesState)
 
 $manager = Await ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync()) ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager])
 $script:lastKey = $null
@@ -185,6 +186,7 @@ function Write-State {
         $state = Get-State
         $state.saver = Get-EnergySaver
         $state.buds = Get-BudsState
+        $state.headphones = Get-HeadphonesState
         $json = $state | ConvertTo-Json -Compress
     }
     catch {

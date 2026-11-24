@@ -285,6 +285,7 @@
     // Windows Energy Saver turns the battery bar yellow (like Low Power Mode).
     $('c-battery').classList.toggle('saver', state.saver === true);
     applyBuds(state.buds);
+    applyHeadphones(state.headphones);
     const previous = media;
     const app = detectApp(state);
     media = {
@@ -448,6 +449,39 @@
       const last = lastKnownCase();
       setBud('case', last, { known: last !== null, stale: true });
     }
+  }
+
+  // ---- other headphones battery card ------------------------------------------------------
+
+  const HEADPHONE_PHOTO_DIR = 'assets/headphones'; // personal photos, kept out of git
+  let phonesModel = '';
+
+  function showHeadphonePhoto(modelId) {
+    const img = $('phones-img');
+    const icon = $('phones-icon');
+    img.hidden = true;
+    icon.style.display = '';
+    if (!/^[a-z0-9-]+$/.test(modelId)) return;
+    img.onload = () => { img.hidden = false; icon.style.display = 'none'; };
+    img.onerror = () => { img.hidden = true; icon.style.display = ''; };
+    img.src = `${HEADPHONE_PHOTO_DIR}/${modelId}.png`;
+  }
+
+  function applyHeadphones(phones) {
+    const connected = !!phones && phones.connected === true;
+    island.classList.toggle('has-phones', connected);
+    if (!connected) return;
+    const modelId = String(phones.id || '');
+    if (modelId !== phonesModel) {
+      phonesModel = modelId;
+      showHeadphonePhoto(modelId);
+    }
+    $('phones-name').textContent = String(phones.name || 'Headphones').slice(0, 40);
+    const pct = Number(phones.battery);
+    const valid = Number.isFinite(pct) && pct >= 0 && pct <= 100;
+    $('phones-pct').textContent = valid ? `${pct}%` : '—';
+    $('phones-fill').style.width = valid ? `${pct}%` : '0';
+    $('phones').classList.toggle('low', valid && pct <= BUD_LOW);
   }
 
   // ---- battery (idle view) ---------------------------------------------------------------

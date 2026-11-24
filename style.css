@@ -177,6 +177,19 @@ header { display: flex; justify-content: space-between; align-items: center; }
 .bud.na .bud-pct { color: var(--secondary); font-weight: 500; }
 .bud.stale .bud-pct { color: var(--secondary); } /* last known case charge */
 
+/* other headphones battery card (e.g. Baseus Bowie D05) */
+#phones { display: none; padding: 8px 14px; }
+#island.has-phones #phones { display: block; }
+.phones-row { display: flex; align-items: center; gap: 12px; }
+.phones-img { width: 30px; height: 40px; object-fit: contain; flex: none; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)); }
+.phones-icon { width: 26px; height: 26px; flex: none; color: var(--secondary); }
+.phones-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+#phones-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.phones-bar { width: 72px; height: 6px; border-radius: 3px; background: var(--track); overflow: hidden; flex: none; }
+#phones-fill { display: block; height: 100%; width: 0; border-radius: 3px; background: var(--primary); transition: width 0.4s var(--ease-out); }
+#phones.low #phones-fill { background: #ff453a; }
+#phones.low #phones-pct { color: #ff453a; }
+
 /* media card */
 #media-empty { color: var(--secondary); font-size: 13px; text-align: center; padding: 4px 0; }
 #media-body { display: none; }
