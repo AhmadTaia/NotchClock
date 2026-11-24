@@ -314,3 +314,6 @@ header { display: flex; justify-content: space-between; align-items: center; }
 header #c-battery { margin-left: auto; margin-right: 12px; animation: none; }
 #island.no-battery header #c-battery { display: none; }
 #island.playing:not(.no-battery) header #c-battery, #island.timer-active:not(.no-battery) header #c-battery { display: inline-flex; }
+
+/* Resting time: Bahnschrift (built into Windows 10/11), a little bigger */
+#c-time { font-family: "Bahnschrift", "Segoe UI Variable Display", "Segoe UI", sans-serif; font-size: 15px; font-weight: 600; letter-spacing: 0.4px; }
