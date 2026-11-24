@@ -302,3 +302,7 @@ header { display: flex; justify-content: space-between; align-items: center; }
 }
 @keyframes connect-float { from { transform: translateY(0); } to { transform: translateY(-1.5px); } }
 @keyframes connect-text { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+
+/* Built-in model drawings (used when no personal photo exists) */
+.phones-icon.drawing { width: 32px; height: 36px; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)); }
+#c-connect-img svg.wide { width: 22px; }

@@ -391,6 +391,9 @@
 
   const TOAST_HEIGHT = 34;
   const CONNECT_TOAST_MS = 3200;
+  // Built-in drawings for known models, used when no personal photo is present (e.g. for friends
+  // installing from GitHub). Unknown models fall back to the generic headphone icon.
+  const MODEL_DRAWINGS = { 'bowie-d05': '<svg class="wide" viewBox="0 0 40 44"><use href="#d05-shape"/></svg>' };
   const HEADPHONE_ICON = '<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-9 9v6a3 3 0 0 0 3 3h1a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1H5v-1a7 7 0 0 1 14 0v1h-2a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h1a3 3 0 0 0 3-3v-6a9 9 0 0 0-9-9z" fill="#fff"/></svg>';
   let toastTimer = 0;
   let budsSeen = null;   // null until the first report, so app start doesn't trigger it
@@ -435,7 +438,7 @@
   function notePhonesConnection(connected, modelId) {
     if (phonesSeen === false && connected) {
       const safeId = /^[a-z0-9-]+$/.test(modelId) ? modelId : '';
-      showConnectToast([photoOr(`assets/headphones/${safeId || 'none'}.png`, HEADPHONE_ICON)]);
+      showConnectToast([photoOr(`assets/headphones/${safeId || 'none'}.png`, MODEL_DRAWINGS[safeId] || HEADPHONE_ICON)]);
     }
     phonesSeen = connected;
   }
@@ -512,11 +515,18 @@
   const HEADPHONE_PHOTO_DIR = 'assets/headphones'; // personal photos, kept out of git
   let phonesModel = '';
 
+  const GENERIC_HEADPHONE_PATH = '<path d="M12 3a9 9 0 0 0-9 9v6a3 3 0 0 0 3 3h1a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1H5v-1a7 7 0 0 1 14 0v1h-2a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h1a3 3 0 0 0 3-3v-6a9 9 0 0 0-9-9z" fill="currentColor"/>';
+
   function showHeadphonePhoto(modelId) {
     const img = $('phones-img');
     const icon = $('phones-icon');
     img.hidden = true;
     icon.style.display = '';
+    // Show the model's drawing (or the generic icon) until/unless a personal photo loads.
+    const drawing = MODEL_DRAWINGS[modelId];
+    icon.classList.toggle('drawing', !!drawing);
+    icon.setAttribute('viewBox', drawing ? '0 0 40 44' : '0 0 24 24');
+    icon.innerHTML = drawing ? '<use href="#d05-shape"/>' : GENERIC_HEADPHONE_PATH;
     if (!/^[a-z0-9-]+$/.test(modelId)) return;
     img.onload = () => { img.hidden = false; icon.style.display = 'none'; };
     img.onerror = () => { img.hidden = true; icon.style.display = ''; };
