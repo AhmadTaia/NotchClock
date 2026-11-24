@@ -21,6 +21,8 @@ Add-Type -Namespace NotchClock -Name Power -MemberDefinition @'
 public struct SYSTEM_POWER_STATUS { public byte ACLineStatus; public byte BatteryFlag; public byte BatteryLifePercent; public byte SystemStatusFlag; public int BatteryLifeTime; public int BatteryFullLifeTime; }
 [DllImport("kernel32.dll")]
 public static extern bool GetSystemPowerStatus(out SYSTEM_POWER_STATUS status);
+[DllImport("kernel32.dll")]
+public static extern bool SetProcessWorkingSetSize(IntPtr process, IntPtr min, IntPtr max);
 '@
 
 # Windows 11's Energy Saver (including on AC power) shows up as the "effective power mode".
@@ -199,6 +201,17 @@ function Write-State {
 }
 
 # StreamReader over the raw stdin stream gives a truly non-blocking ReadLineAsync.
+$MemoryTrimTicks = 240  # about once a minute
+
+# PowerShell keeps memory it no longer needs (old album art, JSON strings, device queries).
+# Hand it back to Windows periodically so the always-on helper stays small.
+function Clear-HelperMemory {
+    [System.GC]::Collect()
+    [System.GC]::WaitForPendingFinalizers()
+    $self = [System.Diagnostics.Process]::GetCurrentProcess()
+    $null = [NotchClock.Power]::SetProcessWorkingSetSize($self.Handle, [IntPtr](-1), [IntPtr](-1))
+}
+
 $stdin = New-Object System.IO.StreamReader([Console]::OpenStandardInput())
 $pendingLine = $stdin.ReadLineAsync()
 $tick = 0
@@ -219,4 +232,5 @@ while ($true) {
     if ($forceStatus -or ($tick % $TicksPerStatus -eq 0)) { Write-State }
     Start-Sleep -Milliseconds $TickMs
     $tick++
+    if ($tick % $MemoryTrimTicks -eq 0) { Clear-HelperMemory }
 }

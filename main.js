@@ -1,4 +1,4 @@
-// NotchClock main process: transparent always-on-top host window, media helper, tray, startup.
+﻿// NotchClock main process: transparent always-on-top host window, media helper, tray, startup.
 const {
   app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, globalShortcut, shell,
   session, desktopCapturer, Notification,
@@ -26,7 +26,9 @@ if (!app.requestSingleInstanceLock()) {
 // - a 360px island doesn't need a GPU process (~190 MB); software compositing is plenty
 // - no spare pre-launched renderer, and don't grab the keyboard media keys from other apps
 app.disableHardwareAcceleration();
-app.commandLine.appendSwitch('disable-features', 'SpareRendererForSitePerProcess,HardwareMediaKeyHandling');
+app.commandLine.appendSwitch('disable-features', 'SpareRendererForSitePerProcess,HardwareMediaKeyHandling,MediaRouter,OptimizationHints,Translate');
+// The UI's JavaScript is tiny, so V8's lite mode (no optimizing compiler) saves memory for free.
+app.commandLine.appendSwitch('js-flags', '--lite-mode');
 
 const dataPath = (name) => path.join(app.getPath('userData'), name);
 

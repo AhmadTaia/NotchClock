@@ -8,6 +8,7 @@ $HeadphoneModels = @(
 $HeadphoneListRefreshSec = 30   # how often to re-scan paired devices for newly paired headphones
 $HeadphoneStatusRefreshSec = 2  # how often to check the Bluetooth link (fast)
 $HeadphoneBatteryRefreshSec = 30 # battery changes slowly; read it less often
+$HeadphoneSystemRefreshSec = 300 # the System-class scan is slow; do it at most every 5 minutes
 $KeyIsConnected = '{83DA6326-97A6-4088-9453-A1923F573B29} 15'
 $KeyBattery = '{104EA319-6EE2-4701-BD47-8DDBF425BBE5} 2'
 
@@ -15,19 +16,34 @@ $script:Phones = @{
     devices = @(); listedAt = [datetime]::MinValue; checkedAt = [datetime]::MinValue
     state = @{ connected = $false }
     batteryAt = [datetime]::MinValue; battery = -1; linkedId = $null
+    systemDevices = @(); systemListedAt = [datetime]::MinValue
 }
 
-function Update-HeadphoneList {
+function Find-ModelDevices($devices) {
     $found = @()
-    # Windows often keeps the battery level on the "<name> Hands-Free AG" entry (System class),
-    # not on the main Bluetooth one, so look at both classes.
-    foreach ($dev in @(Get-PnpDevice -Class Bluetooth, System -ErrorAction SilentlyContinue)) {
+    foreach ($dev in @($devices)) {
         foreach ($model in $HeadphoneModels) {
             if ($dev.FriendlyName -match $model.match) { $found += @{ instanceId = $dev.InstanceId; model = $model } }
         }
     }
-    $script:Phones.devices = $found
-    $script:Phones.listedAt = Get-Date
+    return $found
+}
+
+function Update-HeadphoneList {
+    $p = $script:Phones
+    $now = Get-Date
+    $found = @(Find-ModelDevices (Get-PnpDevice -Class Bluetooth -ErrorAction SilentlyContinue))
+    # Windows often keeps the battery level on the "<name> Hands-Free AG" entry (System class).
+    # That class is large, so only scan it when a known model is paired, and rarely.
+    if ($found.Count -gt 0) {
+        if (($now - $p.systemListedAt).TotalSeconds -ge $HeadphoneSystemRefreshSec) {
+            $p.systemDevices = @(Find-ModelDevices (Get-PnpDevice -Class System -ErrorAction SilentlyContinue))
+            $p.systemListedAt = $now
+        }
+        $found += $p.systemDevices
+    }
+    $p.devices = $found
+    $p.listedAt = $now
 }
 
 function Get-ModelBattery([string]$modelId) {

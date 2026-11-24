@@ -1,4 +1,4 @@
-// Audio-reactive bars driven by the real system audio output (WASAPI loopback via Electron).
+﻿// Audio-reactive bars driven by the real system audio output (WASAPI loopback via Electron).
 // Nothing is recorded or saved: samples go straight into an AnalyserNode in memory.
 window.NotchViz = (() => {
   'use strict';
@@ -9,7 +9,7 @@ window.NotchViz = (() => {
   const ATTACK = 0.55;
   const DECAY = 0.82;
   const BAND_GAIN = [1.0, 1.05, 1.2, 1.45, 1.9]; // treble carries less energy; lift it a bit
-  const FRAME_INTERVAL_MS = 1000 / 30;
+  const FRAME_INTERVAL_MS = 1000 / 24; // smooth enough for 3px bars, ~20% less drawing than 30 fps
 
   let analyser = null;
   let audioContext = null;
@@ -121,7 +121,9 @@ window.NotchViz = (() => {
         return;
       }
     }
-    const groups = bars();
+    // Only one set of bars is ever visible (collapsed notch or open panel); skip the hidden one.
+    const visible = document.getElementById('island').classList.contains('expanded') ? 1 : 0;
+    const groups = [bars()[visible]].filter(Boolean);
 
     for (let i = 0; i < levels.length; i++) {
       const [from, to] = bandRanges[i];
