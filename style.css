@@ -306,3 +306,11 @@ header { display: flex; justify-content: space-between; align-items: center; }
 /* Built-in model drawings (used when no personal photo exists) */
 .phones-icon.drawing { width: 32px; height: 36px; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)); }
 #c-connect-img svg.wide { width: 22px; }
+
+/* Resting notch shows the time; the battery lives in the expanded header. */
+#c-time { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: 0.2px; animation: pop 0.4s var(--ease-back); }
+#island.playing #c-time, #island.timer-active #c-time { display: none; }
+#island #c-clock { display: none !important; }
+header #c-battery { margin-left: auto; margin-right: 12px; animation: none; }
+#island.no-battery header #c-battery { display: none; }
+#island.playing:not(.no-battery) header #c-battery, #island.timer-active:not(.no-battery) header #c-battery { display: inline-flex; }

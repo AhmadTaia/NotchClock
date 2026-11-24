@@ -45,6 +45,19 @@ public static class Epm {
 $EffectiveModeMaxSaving = 1
 try { $null = [Epm]::Start() } catch { [Console]::Error.WriteLine("effective-power-mode: $($_.Exception.Message)") }
 
+$BatteryFlagNoBattery = 128
+$BatteryFlagUnknown = 255
+
+# Whether this PC has a battery at all (desktops don't), straight from Windows.
+function Get-HasBattery {
+    try {
+        $status = New-Object NotchClock.Power+SYSTEM_POWER_STATUS
+        if (-not [NotchClock.Power]::GetSystemPowerStatus([ref]$status)) { return $true }
+        return ($status.BatteryFlag -ne $BatteryFlagNoBattery) -and ($status.BatteryFlag -ne $BatteryFlagUnknown)
+    }
+    catch { return $true }
+}
+
 function Get-EnergySaver {
     try {
         $mode = [Epm]::Mode
@@ -187,6 +200,7 @@ function Write-State {
     try {
         $state = Get-State
         $state.saver = Get-EnergySaver
+        $state.hasBattery = Get-HasBattery
         $state.buds = Get-BudsState
         $state.headphones = Get-HeadphonesState
         $json = $state | ConvertTo-Json -Compress

@@ -169,8 +169,22 @@
     $('date-line').textContent = dateFormat.format(now) + (period ? `  ·  ${period.value}` : '');
   }
 
+  let compactTimeText = '';
+
+  /** Resting-notch time: only touches the DOM when the minute changes. */
+  function updateCompactTime() {
+    const parts = timeFormat.formatToParts(new Date());
+    const hm = parts.filter((p) => p.type === 'hour' || p.type === 'minute' || p.type === 'literal')
+      .map((p) => p.value).join('').trim();
+    if (hm === compactTimeText) return;
+    compactTimeText = hm;
+    $('c-time').textContent = hm;
+    if (!expanded) retarget(); // width can change, e.g. 9:59 -> 10:00
+  }
+
   function scheduleClock() {
-    // The collapsed notch shows a static icon, so only touch the DOM while the panel is open.
+    updateCompactTime();
+    // The big clock (with seconds) is only visible while the panel is open.
     if (expanded) updateClock();
     // Re-align to the next whole second so the seconds tick exactly on time.
     setTimeout(scheduleClock, 1000 - (Date.now() % 1000) + 5);
@@ -285,6 +299,7 @@
     if (!state || typeof state !== 'object') return;
     // Windows Energy Saver turns the battery bar yellow (like Low Power Mode).
     $('c-battery').classList.toggle('saver', state.saver === true);
+    if (typeof state.hasBattery === 'boolean') island.classList.toggle('no-battery', !state.hasBattery);
     applyBuds(state.buds);
     applyHeadphones(state.headphones);
     const previous = media;
@@ -563,8 +578,9 @@
     } catch (err) {
       window.notch.logError('battery', err && err.message ? err.message : String(err));
     }
-    // Desktops report a permanently full, charging "battery"; show the clock there instead.
-    const noBattery = !battery || (battery.level === 1 && battery.charging && battery.chargingTime === 0 && battery.dischargingTime === Infinity);
+    // Whether a battery exists comes from Windows via the helper (hasBattery); guessing from
+    // "100% and charging" wrongly hid it on fully charged laptops.
+    const noBattery = !battery;
     if (noBattery) {
       island.classList.add('no-battery');
       if (!expanded) retarget();
